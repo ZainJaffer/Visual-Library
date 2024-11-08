@@ -1,9 +1,12 @@
 from django.shortcuts import render
 from rest_framework import generics
-from .models import CustomUser
-from .serializers import UserRegistrationSerializer
+from .models import CustomUser, UserBook
+from .serializers import UserRegistrationSerializer, UserBookSerializer
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.views import APIView
+from .models import Book
+from .serializers import BookSerializer
 
 class UserRegistrationView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
@@ -16,3 +19,10 @@ class UserRegistrationView(generics.CreateAPIView):
             return Response({"message": "User registered successfully, please verify your email"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class AddBookView(generics.CreateAPIView):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    
+class UpdateBookStatusView(generics.UpdateAPIView):
+    queryset = UserBook.objects.all()
+    serializer_class = UserBookSerializer

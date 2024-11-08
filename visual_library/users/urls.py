@@ -1,6 +1,6 @@
 # users/urls.py
 from django.urls import path
-from .views import UserRegistrationView
+from .views import UserRegistrationView, AddBookView, UpdateBookStatusView
 from django.http import HttpResponse
 
 try:
@@ -16,5 +16,8 @@ def test_view(request):
 
 urlpatterns = [
     path('register/', UserRegistrationView.as_view(), name='register'),
+    path('books/add/', AddBookView.as_view(), name='add-book'),
+    path('books/<int:pk>/update-status/', UpdateBookStatusView.as_view(), name='update-book-status'),
+
 ]
 
