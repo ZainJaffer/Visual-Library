@@ -1,0 +1,68 @@
+from django.shortcuts import render
+from rest_framework import generics, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+# Local imports
+from .models import CustomUser, UserBook, Book
+from .serializers import (
+    UserRegistrationSerializer, 
+    UserBookSerializer,
+    BookSerializer
+)
+
+
+class UserRegistrationView(generics.CreateAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserRegistrationSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            refresh = RefreshToken.for_user(user)
+            
+            return Response({
+                "message": "User registered successfully",
+                "tokens": {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                },
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email
+                }
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AddBookView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+
+    def perform_create(self, serializer):
+        book = serializer.save()
+        UserBook.objects.create(user=self.request.user, book=book)  # This links the book to the user 
+    
+class UpdateBookStatusView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = UserBook.objects.all()
+    serializer_class = UserBookSerializer
+
+    def get_queryset(self):
+        return UserBook.objects.filter(user=self.request.user) 
+
+class LogoutView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        try:
+            # Client should remove the token
+            return Response({"message": "Successfully logged out."}, 
+                          status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, 
+                          status=status.HTTP_400_BAD_REQUEST)

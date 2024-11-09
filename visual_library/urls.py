@@ -11,4 +11,5 @@ urlpatterns = [
     path('', home_view, name='home'),
     path('api/users/', include('users.urls')),
     path('api/books/', include('users.books.urls')), 
+    path('api-auth/', include('rest_framework.urls')),
 ]
