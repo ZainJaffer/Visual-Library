@@ -4,9 +4,27 @@ from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser, Book, UserBook
 
 class CustomUserAdmin(UserAdmin):
-    list_display = ('email', 'username', 'date_joined', 'is_staff')
+    model = CustomUser
+    list_display = ('email', 'date_joined', 'is_staff', 'is_active')
+    list_filter = ('is_staff', 'is_active')
     ordering = ('email',)
-    search_fields = ('email', 'username')
+    search_fields = ('email',)
+
+    # Add non-editable fields here
+    readonly_fields = ('date_joined', 'last_login')
+
+    fieldsets = (
+        (None, {'fields': ('email', 'password')}),
+        ('Permissions', {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Important dates', {'fields': ('last_login', 'date_joined')}),
+    )
+
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('email', 'password1', 'password2', 'is_staff', 'is_active'),
+        }),
+    )
 
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Book)

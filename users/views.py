@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import AllowAny
 
 # Local imports
 from .models import CustomUser, UserBook, Book
@@ -22,17 +23,18 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
 
-# User Registration View
+# users/views.py
 class UserRegistrationView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserRegistrationSerializer
+    permission_classes = [AllowAny]  # Allow anyone to register
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
-            
+
             return Response({
                 "message": "User registered successfully",
                 "tokens": {
@@ -41,7 +43,6 @@ class UserRegistrationView(generics.CreateAPIView):
                 },
                 "user": {
                     "id": user.id,
-                    "username": user.username,
                     "email": user.email
                 }
             }, status=status.HTTP_201_CREATED)
