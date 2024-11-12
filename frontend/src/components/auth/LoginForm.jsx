@@ -1,14 +1,17 @@
 import { useState } from 'react'
-import { useAuth } from '../../context/AuthContext'  // Add this line
+import { useAuth } from '../../context/AuthContext' 
+import { useNavigate } from 'react-router-dom'  // Add this import
 
 function LoginForm() {
-  const { login } = useAuth()  // Add this line
+  const { login } = useAuth()  
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     email: '',     
     password: ''
   })
 
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)  // Add loading state
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -18,23 +21,20 @@ function LoginForm() {
     }))
   }
 
-  // const handleSubmit = (e) => {
-  //   e.preventDefault()
-  //   console.log('Testing auth context:', !!login)  // Add this line to test
-  //   console.log('Login attempted:', formData)
-  //   // We'll add API call here later
-  // }
-
-
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('') // Clear any previous errors
+    if (isLoading) return  // Prevent multiple submissions
+    
+    setIsLoading(true)
+    setError('')
+    
     try {
-      const result = await login(formData)
-      console.log('Login successful:', result)
-      // TODO: Redirect to dashboard or home page after successful login
+      await login(formData)
+      navigate('/')
     } catch (err) {
       setError(err.message || 'Login failed')
+    } finally {
+      setIsLoading(false)
     }
   }
 
