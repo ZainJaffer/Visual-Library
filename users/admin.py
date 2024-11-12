@@ -3,7 +3,11 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser, Book, UserBook
 
-# Register the CustomUser model to make it accessible in the admin panel
-admin.site.register(CustomUser, UserAdmin)
+class CustomUserAdmin(UserAdmin):
+    list_display = ('email', 'username', 'date_joined', 'is_staff')
+    ordering = ('email',)
+    search_fields = ('email', 'username')
+
+admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Book)
 admin.site.register(UserBook)

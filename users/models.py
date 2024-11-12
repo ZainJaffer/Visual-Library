@@ -6,6 +6,10 @@ from django.conf import settings
 class CustomUser(AbstractUser):
     is_verified = models.BooleanField(default=False)  # Track email verification status
 
+    email = models.EmailField(unique=True)
+    USERNAME_FIELD = 'email'  # Make email the login field
+    REQUIRED_FIELDS = ['username']  # Username still required for admin
+
        # Fix the relationship conflicts by adding related_name
     groups = models.ManyToManyField(
         Group,
