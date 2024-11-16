@@ -1,0 +1,11 @@
+1. Set up a virtualenv within the backend/ directory or root directory to handle package installs
+2. Swap from sqlite to Postgresql - https://docs.djangoproject.com/en/5.1/ref/databases/
+3. .gitignore file: https://djangowaves.com/tips-tricks/gitignore-for-a-django-project/
+
+
+pip install -r requirements.txt
+pip freeze > requirements.txt
+
+git rm --cached __pycache__
+git add .
+git commit -m "removed cache pycache and added gitignore
