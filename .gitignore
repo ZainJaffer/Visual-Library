@@ -60,3 +60,25 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+# Virtual Environment
+venv/
+env/
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE
+.vscode/
+.idea/
+
+# Database
+*.db
+*.sqlite3
+
+# JSON data files
+scripts/old_data.json
+scripts/new_data.json

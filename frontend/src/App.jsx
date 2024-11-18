@@ -5,6 +5,9 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import TestProtected from './components/TestProtected';
+
+console.log('App.jsx loaded');
 
 function App() {
   return (
@@ -19,12 +22,28 @@ function App() {
             
             {/* Protected routes */}
             <Route 
+              path="/test-protected" 
+              element={
+                <ProtectedRoute>
+                  <TestProtected />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Home route */}
+            <Route 
               path="/" 
               element={
                 <ProtectedRoute>
                   <Home />
                 </ProtectedRoute>
               } 
+            />
+
+            {/* Catch all route for 404s */}
+            <Route 
+              path="*" 
+              element={<div>Page not found</div>} 
             />
           </Routes>
         </div>

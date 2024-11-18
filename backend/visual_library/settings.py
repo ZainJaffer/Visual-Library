@@ -1,6 +1,13 @@
-
 from datetime import timedelta
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+env_path = Path(__file__).resolve().parent / '.env'
+print(f"Looking for .env file at: {env_path}")
+print(f"File exists: {env_path.exists()}")
+load_dotenv(env_path)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -82,10 +89,26 @@ WSGI_APPLICATION = 'visual_library.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
+
+# Add these debug prints
+print("\nDEBUG INFO:")
+print(f"Current directory: {os.getcwd()}")
+print(f"Settings file location: {Path(__file__).resolve()}")
+print(f"Env file location: {Path(__file__).resolve().parent / '.env'}")
+print("\nDatabase Settings:")
+print(f"DB_NAME: {os.getenv('DB_NAME')}")
+print(f"DB_USER: {os.getenv('DB_USER')}")
+print(f"DB_PASSWORD: {os.getenv('DB_PASSWORD')}")
+print(f"DB_HOST: {os.getenv('DB_HOST')}")
+print(f"DB_PORT: {os.getenv('DB_PORT')}\n")
 
 
 # Password validation
@@ -152,3 +175,4 @@ SIMPLE_JWT = {
 
 CORS_ALLOW_ALL_ORIGINS = True  # Only for development
 CORS_ALLOW_CREDENTIALS = True
+

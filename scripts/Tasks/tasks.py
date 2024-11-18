@@ -1,10 +1,9 @@
 import json
 from pprint import pprint
-import pandas as pd
 
 # Replace 'data.json' with your actual file name
-input_file_path = 'C:/Users/Zain Jaffer/Desktop/Dev/Full Stack/Visual Library/scripts/old_data.json'
-output_file_path = 'C:/Users/Zain Jaffer/Desktop/Dev/Full Stack/Visual Library/scripts/new_data.json'
+input_file_path = 'C:/Users/Zain Jaffer/Desktop/Dev/Full Stack/Visual Library/scripts/Tasks/old_data.json'
+output_file_path = 'C:/Users/Zain Jaffer/Desktop/Dev/Full Stack/Visual Library/scripts/Tasks/new_data.json'
 
 # First, let's print out all unique list IDs and their cards to help map them
 list_cards = {}

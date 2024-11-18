@@ -9,11 +9,19 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    console.log('=== AuthContext Debug ===');
     const token = localStorage.getItem('token')
+    console.log('Token found:', token ? 'Yes' : 'No');
+    
     if (token) {
+      console.log('Setting user with token');
       setUser({ token })
+    } else {
+      console.log('No token found - user remains null');
     }
+    
     setLoading(false)
+    console.log('======================');
   }, [])
 
   const login = async (credentials) => {

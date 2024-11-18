@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -15,6 +16,23 @@ from .serializers import (
     UserBookSerializer,
     BookSerializer
 )
+
+
+# Protected Route
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def test_protected_route(request):
+    print("\n=== Protected Route Access ===")
+    print("Headers:", request.headers)
+    print("Auth header:", request.headers.get('Authorization'))
+    print("User:", request.user)
+    print("Is authenticated:", request.user.is_authenticated)
+    print("===========================\n")
+    
+    return Response({
+        "message": "You have accessed a protected route",
+        "user": request.user.email if request.user.is_authenticated else None
+    })
 
 # JWT Authentication Views
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):

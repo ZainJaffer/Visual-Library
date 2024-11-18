@@ -1,11 +1,10 @@
-function Home() {
+import React from 'react'
 
+function Home() {
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">My Library</h1>
-      </div>
-      <p>Welcome to your Visual Library</p>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold">Home Page</h1>
+      <p>If you can see this, the home page is rendering correctly.</p>
     </div>
   )
 }

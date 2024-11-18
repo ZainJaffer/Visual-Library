@@ -4,18 +4,19 @@ import { useAuth } from '../../context/AuthContext'
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
 
-  // Show loading state while checking authentication
   if (loading) {
-    return <div>Loading...</div>
+    return (
+      <div className="p-4 text-center">
+        <p className="text-lg">Loading...</p>
+      </div>
+    );
   }
 
-  // Redirect to login if not authenticated
   if (!user) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" />
   }
 
-  // Render children if authenticated
-  return children
+  return children;
 }
 
 export default ProtectedRoute

@@ -16,9 +16,28 @@ export const authService = {
             email: credentials.email,
             password: credentials.password
         })
+        if (response.data.access) {
+            localStorage.setItem('token', response.data.access)
+        }
         return response.data
     } catch (error) {
         throw error.response?.data || error.message
+    }
+  },
+
+  logout: () => {
+    localStorage.removeItem('token')
+  },
+
+  testProtectedRoute: async () => {
+    try {
+        console.log('Token before request:', localStorage.getItem('token'));
+        const response = await api.get('/users/test-protected/');
+        console.log('Response:', response.data);
+        return response.data;
+    } catch (error) {
+        console.error('Error accessing protected route:', error);
+        throw error.response?.data || error.message;
     }
   }
 } 
