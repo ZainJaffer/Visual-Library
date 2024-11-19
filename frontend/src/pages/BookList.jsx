@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 function BookList() {
   const { user } = useAuth();
@@ -13,14 +13,12 @@ function BookList() {
       if (!user || !user.token) return;
       
       try {
-        const response = await axios.get('http://localhost:8000/api/users/books/', {
-          headers: {
-            'Authorization': `Bearer ${user.token}`
-          }
-        });
+        const response = await api.get('/users/books/');
+        console.log('Books data:', response.data);
         setBooks(response.data);
         setLoading(false);
       } catch (err) {
+        console.error('Error fetching books:', err);
         setError('Failed to fetch books');
         setLoading(false);
       }
@@ -34,10 +32,8 @@ function BookList() {
     const book = books.find(b => b.id === bookId);
     if (!book) return;
 
-    // Create new value
     const newValue = field === 'is_read' ? !book.is_read : !book.is_favorite;
 
-    // Optimistically update UI
     setBooks(books.map(b => 
       b.id === bookId 
         ? { ...b, [field]: newValue }
@@ -45,17 +41,12 @@ function BookList() {
     ));
 
     try {
-      await axios.put(
-        `http://localhost:8000/api/users/books/${bookId}/update-status/`,
-        { [field]: newValue },
-        {
-          headers: {
-            'Authorization': `Bearer ${user.token}`
-          }
-        }
+      await api.put(
+        `/users/books/${bookId}/update-status/`,
+        { [field]: newValue }
       );
     } catch (err) {
-      // Revert on failure
+      console.error('Error updating book:', err);
       setBooks(books.map(b => 
         b.id === bookId 
           ? { ...b, [field]: !newValue }
@@ -75,31 +66,62 @@ function BookList() {
   const BookRow = ({ title, books }) => (
     <div className="mb-8">
       <h2 className="text-xl font-bold mb-4">{title}</h2>
-      <div className="space-y-4">
-        {books.map((book) => (
-          <div key={book.id} className="border p-4 rounded shadow">
-            <h3 className="text-lg font-semibold">{book.title}</h3>
-            <p className="text-gray-600">{book.author}</p>
-            <p className="text-sm text-gray-500">{book.genre}</p>
-            <div className="mt-2 space-x-2">
-              <button 
-                onClick={() => toggleBookStatus(book.id, 'is_read')}
-                className={`px-2 py-1 rounded text-sm ${
-                  book.is_read ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                }`}
-              >
-                {book.is_read ? 'Mark Unread' : 'Mark Read'}
-              </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {books.map((book) => {
+          if (!book) {
+            console.warn('Invalid book data:', book);
+            return null;
+          }
+
+          return (
+            <div key={book.id} className="border p-4 rounded shadow">
+              {console.log('Image URL:', `http://localhost:8000/media/${book.cover_image_url}`)}
               
-              <button 
-                onClick={() => toggleBookStatus(book.id, 'is_favorite')} 
-                className="text-sm text-gray-500"
-              >
-                {book.is_favorite ? 'Unfavorite' : 'Favorite'}
-              </button>
+              <img 
+                src={book.cover_image_url 
+                  ? `http://localhost:8000/media/${book.cover_image_url}`
+                  : 'https://via.placeholder.com/400x600?text=No+Cover'
+                }
+                alt={book.title || 'Book cover'}
+                className="w-full h-64 object-cover rounded mb-4"
+                onError={(e) => {
+                  console.log('Image failed to load:', e.target.src);
+                  e.target.onerror = null;
+                  e.target.src = 'https://via.placeholder.com/400x600?text=No+Cover';
+                }}
+              />
+              <h3 className="text-lg font-semibold">{book.title}</h3>
+              <p className="text-gray-600">{book.author}</p>
+              <p className="text-sm text-gray-500">{book.genre}</p>
+              <p className="text-sm text-gray-600 mt-2 line-clamp-3">
+                {book.description}
+              </p>
+              <div className="mt-4 space-x-2">
+                <button 
+                  onClick={() => toggleBookStatus(book.id, 'is_read')}
+                  className={`px-3 py-1 rounded-full text-sm ${
+                    book.is_read 
+                      ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                      : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                  }`}
+                >
+                  {book.is_read ? 'Mark Unread' : 'Mark Read'}
+                </button>
+                
+                <button 
+                  onClick={() => toggleBookStatus(book.id, 'is_favorite')} 
+                  className={`px-3 py-1 rounded-full text-sm ${
+                    book.is_favorite
+                      ? 'bg-red-100 text-red-800 hover:bg-red-200'
+                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  }`}
+                >
+                  {book.is_favorite ? '★ Favorited' : '☆ Favorite'}
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -1,8 +1,50 @@
 [
     {
+        "Card Name": "Add Favorite Toggle Button",
+        "Description": [
+            "- Add favorite icon button to book list items",
+            "- Implement favorite toggle functionality",
+            "- Update UI to show favorite status"
+        ],
+        "Labels": [
+            "Frontend",
+            "API"
+        ],
+        "Stage": [
+            "Done"
+        ]
+    },
+    {
+        "Card Name": "Add Toggle Button for Read/Unread",
+        "Description": [
+            "- Add a button to the book list component to **toggle books as read or unread**.",
+            "- **Description**: The toggle should call the backend API to update the book's `is_read` status."
+        ],
+        "Labels": [
+            "Frontend",
+            "API"
+        ],
+        "Stage": [
+            "Done"
+        ]
+    },
+    {
+        "Card Name": "Create Book List Component (Simplified Version)",
+        "Description": [
+            "- Build a component to **display books in categorized rows**, such as **Read** and **Unread**.",
+            "- **Description**: This component will list books in the user\u2019s library, categorized by their status (`read`/`unread`)."
+        ],
+        "Labels": [
+            "Frontend"
+        ],
+        "Stage": [
+            "Done"
+        ]
+    },
+    {
         "Card Name": "Create AddBook Component",
         "Description": [
-            "- Create a simple form with fields for title, author, and genre",
+            "- Create a simple form with fields for title, author, genre, and description",
             "- Implement form submission to backend API",
             "- Add basic validation and error handling"
         ],
@@ -11,22 +53,7 @@
             "API"
         ],
         "Stage": [
-            "To Do"
-        ]
-    },
-    {
-        "Card Name": "Create Book List API Endpoint",
-        "Description": [
-            "- Implement GET endpoint to retrieve user's books",
-            "- Add filtering capability for read/unread status",
-            "-  Ensure proper authentication checks"
-        ],
-        "Labels": [
-            "Backend",
-            "API"
-        ],
-        "Stage": [
-            "To Do"
+            "Done"
         ]
     },
     {
@@ -41,7 +68,7 @@
             "Security"
         ],
         "Stage": [
-            "To Do"
+            "Done"
         ]
     },
     {
@@ -56,34 +83,22 @@
             "API"
         ],
         "Stage": [
-            "To Do"
+            "Done"
         ]
     },
     {
-        "Card Name": "Create Book List Component (Simplified Version)",
+        "Card Name": "Create Book List API Endpoint",
         "Description": [
-            "- Build a component to **display books in categorized rows**, such as **Read** and **Unread**.",
-            "- **Description**: This component will list books in the user\u2019s library, categorized by their status (`read`/`unread`)."
+            "- Implement GET endpoint to retrieve user's books",
+            "- Add filtering capability for read/unread status",
+            "-  Ensure proper authentication checks"
         ],
         "Labels": [
-            "Frontend"
-        ],
-        "Stage": [
-            "To Do"
-        ]
-    },
-    {
-        "Card Name": "Add Toggle Button for Read/Unread",
-        "Description": [
-            "- Add a button to the book list component to **toggle books as read or unread**.",
-            "- **Description**: The toggle should call the backend API to update the book's `is_read` status."
-        ],
-        "Labels": [
-            "Frontend",
+            "Backend",
             "API"
         ],
         "Stage": [
-            "To Do"
+            "Done"
         ]
     },
     {
