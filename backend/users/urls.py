@@ -5,9 +5,11 @@ from .views import (
     UpdateBookStatusView,
     EmailTokenObtainPairView,
     LogoutView,
-    test_protected_route 
+    test_protected_route,
+    ListUserBooksView, 
+    UpdateBookDetailsView,
+    DeleteBookView,
 )
-from django.http import HttpResponse
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
@@ -19,4 +21,7 @@ urlpatterns = [
     path('test-protected/', test_protected_route, name='test-protected'),
     path('books/<int:pk>/update-status/', UpdateBookStatusView.as_view(), name='update-book-status'),
     path('logout/', LogoutView.as_view(), name='logout'),
+    path('books/', ListUserBooksView.as_view(), name='list-books'),
+    path('books/<int:pk>/update/', UpdateBookDetailsView.as_view(), name='update-book-details'),
+    path('books/<int:pk>/delete/', DeleteBookView.as_view(), name='delete-book'),
 ]

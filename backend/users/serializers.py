@@ -20,9 +20,31 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 class BookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
-        fields = ['title', 'author', 'genre', 'description', 'cover_image_url']
+        fields = ['id', 'title', 'author', 'genre', 'description', 'cover_image_url']
+        extra_kwargs = {
+            'title': {'required': False},
+            'author': {'required': False},
+            'genre': {'required': False},
+            'description': {'required': False},
+            'cover_image_url': {'required': False},
+        }
 
 class UserBookSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(source='book.title', read_only=True)
+    author = serializers.CharField(source='book.author', read_only=True)
+    genre = serializers.CharField(source='book.genre', read_only=True)
+    description = serializers.CharField(source='book.description', read_only=True)
+    cover_image_url = serializers.CharField(source='book.cover_image_url', read_only=True)
+
     class Meta:
         model = UserBook
-        fields = ['is_read', 'is_favorite']
+        fields = [
+            'id',
+            'title',
+            'author',
+            'genre',
+            'description',
+            'cover_image_url',
+            'is_read',
+            'is_favorite'
+        ]

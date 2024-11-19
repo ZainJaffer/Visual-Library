@@ -16,6 +16,7 @@ from .serializers import (
     UserBookSerializer,
     BookSerializer
 )
+from .permissions import IsBookOwner, IsUserBookOwner
 
 
 # Protected Route
@@ -69,7 +70,6 @@ class UserRegistrationView(generics.CreateAPIView):
 # Book Management Views
 class AddBookView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
-    queryset = Book.objects.all()
     serializer_class = BookSerializer
 
     def perform_create(self, serializer):
@@ -77,12 +77,27 @@ class AddBookView(generics.CreateAPIView):
         UserBook.objects.create(user=self.request.user, book=book)
 
 class UpdateBookStatusView(generics.UpdateAPIView):
-    permission_classes = [IsAuthenticated]
-    queryset = UserBook.objects.all()
+    permission_classes = [IsAuthenticated, IsUserBookOwner]
     serializer_class = UserBookSerializer
 
     def get_queryset(self):
         return UserBook.objects.filter(user=self.request.user)
+
+class ListUserBooksView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserBookSerializer
+
+    def get_queryset(self):
+        queryset = UserBook.objects.filter(user=self.request.user)
+        
+        # Add filtering by read status
+        status = self.request.query_params.get('status', None)
+        if status == 'read':
+            queryset = queryset.filter(is_read=True)
+        elif status == 'unread':
+            queryset = queryset.filter(is_read=False)
+            
+        return queryset
 
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -96,3 +111,39 @@ class LogoutView(APIView):
             return Response({
                 "error": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, PermissionDenied):
+            return Response(
+                {"error": "You do not have permission to perform this action"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().handle_exception(exc)
+
+class UpdateBookDetailsView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = BookSerializer
+    
+    def get_queryset(self):
+        return Book.objects.filter(userbook__user=self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        # Add GET method to show current data
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        # Enable PATCH for partial updates
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+
+class DeleteBookView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Book.objects.filter(userbook__user=self.request.user)
+
+    def perform_destroy(self, instance):
+        # This will delete both the UserBook and Book entries
+        instance.delete()

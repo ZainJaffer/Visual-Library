@@ -33,6 +33,22 @@ function Navbar() {
               Home
             </NavLink>
           </li>
+          {user && (
+            <>
+              <li>
+                <NavLink
+                  to="/books/add"
+                  className={({ isActive }) =>
+                    isActive
+                      ? 'text-yellow-400 text-lg font-bold underline'
+                      : 'text-white text-lg font-medium hover:text-yellow-300'
+                  }
+                >
+                  Add Book
+                </NavLink>
+              </li>
+            </>
+          )}
           {user ? (
             <li>
               <button
