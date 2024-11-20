@@ -9,6 +9,7 @@ from .views import (
     ListUserBooksView, 
     UpdateBookDetailsView,
     DeleteBookView,
+    get_random_cover,
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -24,4 +25,5 @@ urlpatterns = [
     path('books/', ListUserBooksView.as_view(), name='list-books'),
     path('books/<int:pk>/update/', UpdateBookDetailsView.as_view(), name='update-book-details'),
     path('books/<int:pk>/delete/', DeleteBookView.as_view(), name='delete-book'),
+    path('random-cover/', get_random_cover, name='random-cover'),
 ]

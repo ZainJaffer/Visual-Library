@@ -8,6 +8,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
+import random
+import os
+from django.conf import settings
 
 # Local imports
 from .models import CustomUser, UserBook, Book
@@ -91,11 +94,24 @@ class ListUserBooksView(generics.ListAPIView):
         queryset = UserBook.objects.filter(user=self.request.user)
         
         # Add filtering by read status
-        status = self.request.query_params.get('status', None)
-        if status == 'read':
+        status_param = self.request.query_params.get('status', None)
+        if status_param == 'read':
             queryset = queryset.filter(is_read=True)
-        elif status == 'unread':
+        elif status_param == 'unread':
             queryset = queryset.filter(is_read=False)
+
+        # For books without covers, assign random covers
+        covers_dir = os.path.join(settings.MEDIA_ROOT, 'book_covers')
+        if os.path.exists(covers_dir):
+            available_covers = [
+                f for f in os.listdir(covers_dir) 
+                if f.lower().endswith(('.jpg', '.jpeg', '.png'))
+            ]
+            
+            for userbook in queryset:
+                if not userbook.book.cover_image_url and available_covers:
+                    random_cover = random.choice(available_covers)
+                    userbook.book.temp_cover = f'book_covers/{random_cover}'
             
         return queryset
 
@@ -147,3 +163,34 @@ class DeleteBookView(generics.DestroyAPIView):
     def perform_destroy(self, instance):
         # This will delete both the UserBook and Book entries
         instance.delete()
+
+# Add this new view for random covers
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_random_cover(request):
+    """Return a random cover image from the book_covers directory"""
+    try:
+        covers_dir = os.path.join(settings.MEDIA_ROOT, 'book_covers')
+        if os.path.exists(covers_dir):
+            available_covers = [
+                f for f in os.listdir(covers_dir) 
+                if f.lower().endswith(('.jpg', '.jpeg', '.png'))
+            ]
+            
+            if available_covers:
+                random_cover = random.choice(available_covers)
+                return Response({
+                    'status': 'success',
+                    'cover_url': f'book_covers/{random_cover}'
+                })
+            
+        return Response({
+            'status': 'error',
+            'message': 'No cover images available'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

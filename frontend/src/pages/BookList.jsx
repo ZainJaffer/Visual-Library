@@ -1,6 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { LazyLoadImage } from 'react-lazy-load-image-component';
+import 'react-lazy-load-image-component/src/effects/blur.css';
+
+const formatAuthors = (authorString) => {
+  if (!authorString) return '';
+  
+  const MAX_LENGTH = 30; // Maximum characters before truncating
+  const authors = authorString.split(',').map(author => author.trim());
+  
+  if (authors.length === 1) {
+    // Single author - truncate if too long
+    return authors[0].length > MAX_LENGTH 
+      ? authors[0].substring(0, MAX_LENGTH) + '...'
+      : authors[0];
+  }
+  
+  // Multiple authors - show first author + et al.
+  return authors[0].length > MAX_LENGTH
+    ? authors[0].substring(0, MAX_LENGTH) + '...'
+    : `${authors[0]} et al.`;
+};
 
 function BookList() {
   const { user } = useAuth();
@@ -63,68 +84,122 @@ function BookList() {
   const readBooks = books.filter(book => book.is_read);
   const unreadBooks = books.filter(book => !book.is_read);
 
-  const BookRow = ({ title, books }) => (
-    <div className="mb-8">
-      <h2 className="text-xl font-bold mb-4">{title}</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {books.map((book) => {
-          if (!book) {
-            console.warn('Invalid book data:', book);
-            return null;
-          }
+  const BookRow = ({ title, books }) => {
+    const [coverUrls, setCoverUrls] = useState({});
 
-          return (
-            <div key={book.id} className="border p-4 rounded shadow">
-              {console.log('Image URL:', `http://localhost:8000/media/${book.cover_image_url}`)}
-              
-              <img 
-                src={book.cover_image_url 
-                  ? `http://localhost:8000/media/${book.cover_image_url}`
-                  : 'https://via.placeholder.com/400x600?text=No+Cover'
-                }
-                alt={book.title || 'Book cover'}
-                className="w-full h-64 object-cover rounded mb-4"
-                onError={(e) => {
-                  console.log('Image failed to load:', e.target.src);
-                  e.target.onerror = null;
-                  e.target.src = 'https://via.placeholder.com/400x600?text=No+Cover';
-                }}
-              />
-              <h3 className="text-lg font-semibold">{book.title}</h3>
-              <p className="text-gray-600">{book.author}</p>
-              <p className="text-sm text-gray-500">{book.genre}</p>
-              <p className="text-sm text-gray-600 mt-2 line-clamp-3">
-                {book.description}
-              </p>
-              <div className="mt-4 space-x-2">
-                <button 
-                  onClick={() => toggleBookStatus(book.id, 'is_read')}
-                  className={`px-3 py-1 rounded-full text-sm ${
+    const getRandomCover = async () => {
+      try {
+        const response = await api.get('/users/random-cover/');
+        return response.data.cover_url;
+      } catch (error) {
+        console.error('Failed to get random cover:', error);
+        return null;
+      }
+    };
+
+    useEffect(() => {
+      const fetchCovers = async () => {
+        const newCoverUrls = {};
+        for (const book of books) {
+          if (!book.cover_image_url) {
+            newCoverUrls[book.id] = await getRandomCover();
+          }
+        }
+        setCoverUrls(newCoverUrls);
+      };
+      
+      fetchCovers();
+    }, [books]);
+
+    return (
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold mb-6">{title}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {books.map((book) => {
+            if (!book) return null;
+
+            return (
+              <div key={book.id} 
+                   className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
+              >
+                {/* Image with overlay on hover */}
+                <div className="relative aspect-[2/3] overflow-hidden">
+                  <LazyLoadImage 
+                    src={book.cover_image_url 
+                      ? `http://localhost:8000/media/${book.cover_image_url}`
+                      : `http://localhost:8000/media/${coverUrls[book.id] || ''}`
+                    }
+                    alt={book.title}
+                    effect="blur"
+                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                    wrapperClassName="w-full h-full"
+                    onError={async (e) => {
+                      e.target.onerror = null;
+                      const randomCover = await getRandomCover();
+                      if (randomCover) {
+                        e.target.src = `http://localhost:8000/media/${randomCover}`;
+                      }
+                    }}
+                  />
+                  
+                  {/* Favorite badge */}
+                  {book.is_favorite && (
+                    <div className="absolute top-3 right-3 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-lg">★</span>
+                    </div>
+                  )}
+
+                  {/* Read status badge */}
+                  <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-medium ${
                     book.is_read 
-                      ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                      : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                  }`}
-                >
-                  {book.is_read ? 'Mark Unread' : 'Mark Read'}
-                </button>
-                
-                <button 
-                  onClick={() => toggleBookStatus(book.id, 'is_favorite')} 
-                  className={`px-3 py-1 rounded-full text-sm ${
-                    book.is_favorite
-                      ? 'bg-red-100 text-red-800 hover:bg-red-200'
-                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                  }`}
-                >
-                  {book.is_favorite ? '★ Favorited' : '☆ Favorite'}
-                </button>
+                      ? 'bg-green-500 text-white' 
+                      : 'bg-yellow-400 text-gray-800'
+                  }`}>
+                    {book.is_read ? 'Read' : 'Unread'}
+                  </div>
+                </div>
+
+                {/* Content section */}
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                    {book.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4" title={book.author}>
+                    {formatAuthors(book.author)}
+                  </p>
+
+                  {/* Action buttons with hover effects */}
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => toggleBookStatus(book.id, 'is_read')}
+                      className="flex-1 px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 
+                               hover:bg-gray-50 hover:border-gray-300 transition-all duration-200
+                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      {book.is_read ? 'Mark Unread' : 'Mark Read'}
+                    </button>
+                    
+                    <button 
+                      onClick={() => toggleBookStatus(book.id, 'is_favorite')}
+                      className={`w-12 flex items-center justify-center rounded-lg border 
+                                transition-all duration-200 focus:outline-none focus:ring-2 
+                                focus:ring-offset-2 ${
+                        book.is_favorite
+                          ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100 focus:ring-red-500'
+                          : 'border-gray-200 hover:bg-gray-50 hover:border-gray-300 focus:ring-blue-500'
+                      }`}
+                    >
+                      <span className="text-xl">{book.is_favorite ? '★' : '☆'}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="container mx-auto p-4">

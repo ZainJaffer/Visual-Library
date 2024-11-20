@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'users',
-    'rest_framework_simplejwt'
+    'rest_framework_simplejwt',
+    'imagekit',
 ]
 
 REST_FRAMEWORK = {

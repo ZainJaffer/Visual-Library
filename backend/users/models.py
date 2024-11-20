@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db import models
 from django.conf import settings
+from imagekit.models import ProcessedImageField
+from imagekit.processors import ResizeToFit
 
 # Create your models here.
 class CustomUserManager(BaseUserManager):
@@ -38,7 +40,14 @@ class Book(models.Model):
     author = models.CharField(max_length=255)
     genre = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    cover_image_url = models.URLField(max_length=500, blank=True)
+    cover_image_url = ProcessedImageField(
+        upload_to='book_covers',
+        processors=[ResizeToFit(800, 1200)],  # Optimize size while maintaining aspect ratio
+        format='JPEG',
+        options={'quality': 85},
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return self.title
