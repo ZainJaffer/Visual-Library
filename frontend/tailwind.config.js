@@ -5,7 +5,11 @@ export default {
     "./src/**/*.{js,jsx}"  // This tells Tailwind which files to scan for classes
   ],
   theme: {
-    extend: {},
+    extend: {
+      screens: {
+        'xs': '475px',
+      },
+    },
   },
   plugins: [],
 }
