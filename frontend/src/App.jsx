@@ -5,9 +5,8 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import TestProtected from './components/TestProtected';
-import BookList from './pages/BookList'
-import AddBook from './pages/AddBook'
+import MyBooks from './pages/MyBooks'
+import Discover from './pages/Discover'
 
 console.log('App.jsx loaded');
 
@@ -24,10 +23,18 @@ function App() {
             
             {/* Protected routes */}
             <Route 
-              path="/test-protected" 
+              path="/my-books" 
               element={
                 <ProtectedRoute>
-                  <TestProtected />
+                  <MyBooks />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/discover" 
+              element={
+                <ProtectedRoute>
+                  <Discover />
                 </ProtectedRoute>
               } 
             />
@@ -37,15 +44,10 @@ function App() {
               path="/" 
               element={
                 <ProtectedRoute>
-                  <BookList />
+                  <Home />
                 </ProtectedRoute>
               } 
             />
-            <Route path="/books/add" element={
-              <ProtectedRoute>
-                <AddBook />
-              </ProtectedRoute>
-            } />
 
             {/* Catch all route for 404s */}
             <Route 

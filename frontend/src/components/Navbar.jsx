@@ -2,85 +2,60 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // If you're using authentication
+import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
   const { user, logout } = useAuth();
 
+  // Create a consistent navLink style for all links
+  const navLinkStyle = ({ isActive }) => `
+    text-xl font-medium text-gray-600 
+    ${isActive 
+      ? 'text-gray-900' 
+      : 'hover:text-gray-900 transition-colors'
+    }
+  `;
+
   return (
-    <nav className="bg-blue-600 p-4">
-      <div className="container mx-auto flex items-center justify-between">
-        {/* Logo or Brand Name */}
-        <div>
-          <NavLink
-            to="/"
-            className="text-white text-xl font-bold"
-          >
-            Visual Book Library Project
-          </NavLink>
-        </div>
+    <nav className="bg-slate-100 px-4 py-4">
+      <div className="max-w-[1320px] mx-auto flex items-center justify-between">
+        {/* Logo */}
+        <NavLink to="/" className="text-2xl font-bold text-gray-800">
+          Visual Library
+        </NavLink>
+        
         {/* Navigation Links */}
-        <ul className="flex space-x-6">
-          <li>
-            <NavLink
-              to="/"
-              className={({ isActive }) =>
-                isActive
-                  ? 'text-yellow-400 text-lg font-bold underline'
-                  : 'text-white text-lg font-medium hover:text-yellow-300'
-              }
-            >
-              Home
-            </NavLink>
-          </li>
-          {user && (
+        <ul className="flex space-x-8">
+          {user ? (
             <>
               <li>
-                <NavLink
-                  to="/books/add"
-                  className={({ isActive }) =>
-                    isActive
-                      ? 'text-yellow-400 text-lg font-bold underline'
-                      : 'text-white text-lg font-medium hover:text-yellow-300'
-                  }
-                >
-                  Add Book
+                <NavLink to="/my-books" className={navLinkStyle}>
+                  My Books
                 </NavLink>
               </li>
+              <li>
+                <NavLink to="/discover" className={navLinkStyle}>
+                  Discover
+                </NavLink>
+              </li>
+              <li>
+                <button
+                  onClick={logout}
+                  className="text-xl font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  Logout
+                </button>
+              </li>
             </>
-          )}
-          {user ? (
-            <li>
-              <button
-                onClick={logout}
-                className="text-white text-lg font-medium hover:text-yellow-300"
-              >
-                Logout
-              </button>
-            </li>
           ) : (
             <>
               <li>
-                <NavLink
-                  to="/login"
-                  className={({ isActive }) =>
-                    isActive
-                      ? 'text-yellow-400 text-lg font-bold underline'
-                      : 'text-white text-lg font-medium hover:text-yellow-300'
-                  }
-                >
+                <NavLink to="/login" className={navLinkStyle}>
                   Login
                 </NavLink>
               </li>
               <li>
-                <NavLink
-                  to="/register"
-                  className={({ isActive }) =>
-                    isActive
-                      ? 'text-yellow-400 text-lg font-bold underline'
-                      : 'text-white text-lg font-medium hover:text-yellow-300'
-                  }
-                >
+                <NavLink to="/register" className={navLinkStyle}>
                   Register
                 </NavLink>
               </li>

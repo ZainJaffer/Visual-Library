@@ -1,12 +1,18 @@
-import React from 'react'
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function Home() {
-  return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold">Home Page</h1>
-      <p>If you can see this, the home page is rendering correctly.</p>
-    </div>
-  )
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/my-books');
+    }
+  }, [user, navigate]);
+
+  return null;
 }
 
-export default Home
+export default Home;
