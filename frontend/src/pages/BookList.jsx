@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { LazyLoadImage } from 'react-lazy-load-image-component';
@@ -307,12 +307,19 @@ function BookList() {
           bookElement.style.transform = 'scale(0.95)';
         }
         
+        // Update the state after the fade-out animation
         setTimeout(() => {
           setBooks(prevBooks => 
             prevBooks.map(b => 
               b.id === bookId ? { ...b, is_read: newValue } : b
             )
           );
+
+          // Reset the book element style if it's in multiple sections
+          if (bookElement && book.is_favorite) {
+            bookElement.style.opacity = '1';
+            bookElement.style.transform = 'scale(1)';
+          }
         }, 300);
       }
 
@@ -322,12 +329,27 @@ function BookList() {
     }
   };
 
+  // Group books into different categories
+  const bookCategories = useMemo(() => {
+    // Get unique genres from all books
+    const genres = [...new Set(books.flatMap(book => 
+      book.genre ? book.genre.split(',').map(g => g.trim()) : []
+    ))];
+
+    return {
+      'Favorites': books.filter(book => book.is_favorite),
+      'Recently Added': books.slice(0, 10),
+      ...genres.reduce((acc, genre) => ({
+        ...acc,
+        [`${genre}`]: books.filter(book => book.genre && book.genre.includes(genre))
+      }), {}),
+      'Read Books': books.filter(book => book.is_read),
+      'Unread Books': books.filter(book => !book.is_read),
+    };
+  }, [books]);
+
   if (loading) return <div className="p-4">Loading...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
-
-  // Separate books into read and unread
-  const readBooks = books.filter(book => book.is_read);
-  const unreadBooks = books.filter(book => !book.is_read);
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -337,12 +359,54 @@ function BookList() {
         <p className="text-gray-500">No books found. Add some books to get started!</p>
       ) : (
         <div className="space-y-12">
-          {readBooks.length > 0 && (
-            <BookRow title="Read Books" books={readBooks} onToggleStatus={toggleBookStatus} />
+          {/* Favorites at the top */}
+          {bookCategories['Favorites'].length > 0 && (
+            <BookRow 
+              title="Favorites" 
+              books={bookCategories['Favorites']}
+              onToggleStatus={toggleBookStatus}
+            />
           )}
           
-          {unreadBooks.length > 0 && (
-            <BookRow title="Unread Books" books={unreadBooks} onToggleStatus={toggleBookStatus} />
+          {/* Recently Added */}
+          {bookCategories['Recently Added'].length > 0 && (
+            <BookRow 
+              title="Recently Added" 
+              books={bookCategories['Recently Added']}
+              onToggleStatus={toggleBookStatus}
+            />
+          )}
+          
+          {/* Genre-based sections */}
+          {Object.entries(bookCategories)
+            .filter(([key]) => !['Favorites', 'Recently Added', 'Read Books', 'Unread Books'].includes(key))
+            .map(([genre, books]) => 
+              books.length > 0 && (
+                <BookRow 
+                  key={genre}
+                  title={genre} 
+                  books={books}
+                  onToggleStatus={toggleBookStatus}
+                />
+              )
+            )}
+          
+          {/* Read Books */}
+          {bookCategories['Read Books'].length > 0 && (
+            <BookRow 
+              title="Read Books" 
+              books={bookCategories['Read Books']}
+              onToggleStatus={toggleBookStatus}
+            />
+          )}
+          
+          {/* Unread Books */}
+          {bookCategories['Unread Books'].length > 0 && (
+            <BookRow 
+              title="Unread Books" 
+              books={bookCategories['Unread Books']}
+              onToggleStatus={toggleBookStatus}
+            />
           )}
         </div>
       )}
