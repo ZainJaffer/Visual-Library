@@ -36,19 +36,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 class Book(models.Model):
-    title = models.CharField(max_length=255)
-    author = models.CharField(max_length=255)
+    title = models.CharField(max_length=200)
+    author = models.CharField(max_length=200)
     genre = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-    cover_image_url = ProcessedImageField(
-        upload_to='book_covers',
-        processors=[ResizeToFit(800, 1200)],  # Optimize size while maintaining aspect ratio
-        format='JPEG',
-        options={'quality': 85},
+    description = models.TextField(blank=True, null=True)
+    cover_image_url = models.ImageField(
+        upload_to='book_covers/',
         null=True,
         blank=True
     )
-
+    
     def __str__(self):
         return self.title
     
