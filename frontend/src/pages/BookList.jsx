@@ -24,7 +24,7 @@ const formatAuthors = (authorString) => {
 };
 
 // Move BookRow component outside BookList
-const BookRow = React.memo(({ title, books, onToggleStatus }) => {
+const BookRow = React.memo(({ title, subtitle, books, onToggleStatus }) => {
   const [coverUrls, setCoverUrls] = useState({});
   const [showLeftScroll, setShowLeftScroll] = useState(false);
   const [showRightScroll, setShowRightScroll] = useState(false);
@@ -126,7 +126,12 @@ const BookRow = React.memo(({ title, books, onToggleStatus }) => {
 
   return (
     <div className="mb-8">
-      <h2 className="text-2xl font-bold mb-6">{title}</h2>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold">{title}</h2>
+        {subtitle && (
+          <p className="text-sm text-gray-600 mt-1">{subtitle}</p>
+        )}
+      </div>
       <div className="relative min-w-0 group">
         {/* Left scroll button */}
         {showLeftScroll && (
@@ -176,7 +181,7 @@ const BookRow = React.memo(({ title, books, onToggleStatus }) => {
                 <div 
                   key={book.id}
                   id={`book-${book.id}`}
-                  className="flex-none w-[280px] group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
+                  className="flex-none w-[220px] group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
                 >
                   {/* Image section - removed opacity changes */}
                   <div className="relative aspect-[2/3] overflow-hidden">
@@ -200,13 +205,13 @@ const BookRow = React.memo(({ title, books, onToggleStatus }) => {
                     
                     {/* Favorite badge */}
                     {book.is_favorite && (
-                      <div className="absolute top-3 right-3 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg">
-                        <span className="text-lg">★</span>
+                      <div className="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-base">★</span>
                       </div>
                     )}
 
                     {/* Read status badge */}
-                    <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-medium ${
+                    <div className={`absolute top-2 left-2 px-2.5 py-1 rounded-full text-xs font-medium ${
                       book.is_read 
                         ? 'bg-green-500 text-white' 
                         : 'bg-yellow-400 text-gray-800'
@@ -216,32 +221,32 @@ const BookRow = React.memo(({ title, books, onToggleStatus }) => {
                   </div>
 
                   {/* Content section */}
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                  <div className="p-3">
+                    <h3 className="text-base font-semibold mb-1.5 line-clamp-1 group-hover:text-blue-600 transition-colors">
                       {book.title}
                     </h3>
-                    <p className="text-gray-600 text-sm mb-4" title={book.author}>
+                    <p className="text-gray-600 text-sm mb-3" title={book.author}>
                       {formatAuthors(book.author)}
                     </p>
 
                     {/* Action buttons with loading states */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5">
                       <button 
                         onClick={() => onToggleStatus(book.id, 'is_read')}
-                        className="flex-1 px-4 py-2 text-sm font-medium rounded-lg border hover:bg-gray-50"
+                        className="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg border hover:bg-gray-50"
                       >
                         {book.is_read ? 'Mark Unread' : 'Mark Read'}
                       </button>
                       
                       <button 
                         onClick={() => onToggleStatus(book.id, 'is_favorite')}
-                        className={`w-12 flex items-center justify-center rounded-lg border ${
+                        className={`w-9 flex items-center justify-center rounded-lg border ${
                           book.is_favorite
                             ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
                             : 'border-gray-200 hover:bg-gray-50'
                         }`}
                       >
-                        <span className="text-xl">{book.is_favorite ? '★' : '☆'}</span>
+                        <span className="text-lg">{book.is_favorite ? '★' : '☆'}</span>
                       </button>
                     </div>
                   </div>
@@ -336,15 +341,23 @@ function BookList() {
       book.genre ? book.genre.split(',').map(g => g.trim()) : []
     ))];
 
+    // Create genre categories for read and unread books
+    const readGenres = {};
+    const unreadGenres = {};
+    genres.forEach(genre => {
+      readGenres[genre] = books.filter(book => 
+        book.genre?.includes(genre) && book.is_read
+      );
+      unreadGenres[genre] = books.filter(book => 
+        book.genre?.includes(genre) && !book.is_read
+      );
+    });
+
     return {
-      'Favorites': books.filter(book => book.is_favorite),
       'Recently Added': books.slice(0, 10),
-      ...genres.reduce((acc, genre) => ({
-        ...acc,
-        [`${genre}`]: books.filter(book => book.genre && book.genre.includes(genre))
-      }), {}),
-      'Read Books': books.filter(book => book.is_read),
-      'Unread Books': books.filter(book => !book.is_read),
+      'Favorites': books.filter(book => book.is_favorite),
+      readGenres,
+      unreadGenres
     };
   }, [books]);
 
@@ -352,62 +365,64 @@ function BookList() {
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold mb-8">My Books</h1>
-      
+    <div className="container mx-auto">
       {books.length === 0 ? (
         <p className="text-gray-500">No books found. Add some books to get started!</p>
       ) : (
-        <div className="space-y-12">
-          {/* Favorites at the top */}
-          {bookCategories['Favorites'].length > 0 && (
-            <BookRow 
-              title="Favorites" 
-              books={bookCategories['Favorites']}
-              onToggleStatus={toggleBookStatus}
-            />
-          )}
-          
-          {/* Recently Added */}
-          {bookCategories['Recently Added'].length > 0 && (
-            <BookRow 
-              title="Recently Added" 
-              books={bookCategories['Recently Added']}
-              onToggleStatus={toggleBookStatus}
-            />
-          )}
-          
-          {/* Genre-based sections */}
-          {Object.entries(bookCategories)
-            .filter(([key]) => !['Favorites', 'Recently Added', 'Read Books', 'Unread Books'].includes(key))
-            .map(([genre, books]) => 
-              books.length > 0 && (
+        <div>
+          {/* First section: Cool gray background */}
+          <div className="bg-slate-100 px-4 py-16">
+            <div className="max-w-[1320px] mx-auto space-y-12">
+              {/* Recently Added - Mixed */}
+              {bookCategories['Recently Added'].length > 0 && (
                 <BookRow 
-                  key={genre}
-                  title={genre} 
-                  books={books}
+                  title="Recently Added" 
+                  books={bookCategories['Recently Added']}
                   onToggleStatus={toggleBookStatus}
                 />
-              )
-            )}
-          
-          {/* Read Books */}
-          {bookCategories['Read Books'].length > 0 && (
-            <BookRow 
-              title="Read Books" 
-              books={bookCategories['Read Books']}
-              onToggleStatus={toggleBookStatus}
-            />
-          )}
-          
-          {/* Unread Books */}
-          {bookCategories['Unread Books'].length > 0 && (
-            <BookRow 
-              title="Unread Books" 
-              books={bookCategories['Unread Books']}
-              onToggleStatus={toggleBookStatus}
-            />
-          )}
+              )}
+              
+              {/* Favorites - Mixed */}
+              {bookCategories['Favorites'].length > 0 && (
+                <BookRow 
+                  title="Favorites" 
+                  books={bookCategories['Favorites']}
+                  onToggleStatus={toggleBookStatus}
+                />
+              )}
+              
+              {/* Read Books by Genre */}
+              {Object.entries(bookCategories.readGenres)
+                .filter(([_, books]) => books.length > 0)
+                .map(([genre, books]) => (
+                  <BookRow 
+                    key={genre}
+                    title={`${genre} • Read`}
+                    books={books}
+                    onToggleStatus={toggleBookStatus}
+                  />
+                ))}
+            </div>
+          </div>
+
+          {/* Recommendations: White background */}
+          <div className="bg-white px-4 py-16">
+            <div className="max-w-[1320px] mx-auto">
+              <h2 className="text-2xl font-bold text-gray-800 mb-12">Recommendations</h2>
+              <div className="space-y-12">
+                {Object.entries(bookCategories.unreadGenres)
+                  .filter(([_, books]) => books.length > 0)
+                  .map(([genre, books]) => (
+                    <BookRow 
+                      key={genre}
+                      title={`${genre} • Unread`}
+                      books={books}
+                      onToggleStatus={toggleBookStatus}
+                    />
+                  ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
