@@ -71,7 +71,7 @@ function AddBook() {
         console.log(pair[0] + ': ' + pair[1]);
       }
 
-      const response = await api.post('/api/books/add/', form, {
+      const response = await api.post('/books/add/', form, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
