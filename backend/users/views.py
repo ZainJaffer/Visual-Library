@@ -11,6 +11,9 @@ from rest_framework.permissions import AllowAny
 import random
 import os
 from django.conf import settings
+from PIL import Image
+import io
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 # Local imports
 from .models import CustomUser, UserBook, Book
@@ -75,9 +78,64 @@ class AddBookView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = BookSerializer
 
+    def compress_image(self, image_file):
+        try:
+            img = Image.open(image_file)
+            
+            # Convert to RGB if necessary
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            # Calculate dimensions while maintaining aspect ratio
+            max_size = (800, 800)
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            
+            # Prepare the compressed image
+            output = io.BytesIO()
+            
+            # Save with compression
+            img.save(output, format='JPEG', quality=85, optimize=True)
+            output.seek(0)
+            
+            return InMemoryUploadedFile(
+                output,
+                'ImageField',
+                f"{image_file.name.split('.')[0]}_compressed.jpg",
+                'image/jpeg',
+                output.getbuffer().nbytes,
+                None
+            )
+        except Exception as e:
+            print(f"Image compression error: {str(e)}")
+            return image_file
+
     def perform_create(self, serializer):
-        book = serializer.save()
-        UserBook.objects.create(user=self.request.user, book=book)
+        try:
+            # Get the cover image from the request
+            cover_image = self.request.FILES.get('cover_image_url')
+            
+            if cover_image:
+                # Check file size (50MB limit)
+                if cover_image.size > 50 * 1024 * 1024:
+                    return Response({
+                        'error': 'File size too large. Maximum size is 50MB.'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Check if image needs compression (over 2MB)
+                if cover_image.size > 2 * 1024 * 1024:
+                    compressed_image = self.compress_image(cover_image)
+                    book = serializer.save(cover_image_url=compressed_image)
+                else:
+                    # Small images don't need compression
+                    book = serializer.save(cover_image_url=cover_image)
+            else:
+                book = serializer.save()
+                
+            UserBook.objects.create(user=self.request.user, book=book)
+            
+        except Exception as e:
+            print(f"Error in perform_create: {str(e)}")
+            raise
 
 class UpdateBookStatusView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated, IsUserBookOwner]

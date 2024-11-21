@@ -2,6 +2,8 @@ from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from django.conf import settings
+from django.conf.urls.static import static
 
 # Load environment variables
 env_path = Path(__file__).resolve().parent / '.env'
@@ -180,4 +182,21 @@ CORS_ALLOW_CREDENTIALS = True
 # Add these settings at the bottom of the file
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Create media directory if it doesn't exist
+MEDIA_ROOT_PATH = Path(MEDIA_ROOT)
+MEDIA_ROOT_PATH.mkdir(exist_ok=True)
+BOOK_COVERS_PATH = MEDIA_ROOT_PATH / 'book_covers'
+BOOK_COVERS_PATH.mkdir(exist_ok=True)
+
+# File Upload Settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+
+# Allowed file types
+ALLOWED_UPLOAD_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+]
 

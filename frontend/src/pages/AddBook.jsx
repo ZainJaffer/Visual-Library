@@ -1,41 +1,93 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import imageCompression from 'browser-image-compression';
+import { toast } from 'react-hot-toast';
+
+// Constants for file validation
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
 
 function AddBook() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: '',
     author: '',
+    description: '',
+    genre: '',
     cover_image_url: null
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
+
+  const compressImage = async (file) => {
+    const options = {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true
+    };
+    
+    try {
+      const compressedFile = await imageCompression(file, options);
+      return compressedFile;
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      return file;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!formData.title.trim() || !formData.author.trim() || !formData.genre.trim()) {
+      setError('Title, Author, and Genre are required fields');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      // Create FormData object for file upload
       const form = new FormData();
-      form.append('title', formData.title);
-      form.append('author', formData.author);
+      form.append('title', formData.title.trim());
+      form.append('author', formData.author.trim());
+      form.append('genre', formData.genre.trim());
+      form.append('description', formData.description.trim());
+      
       if (formData.cover_image_url) {
-        form.append('cover_image_url', formData.cover_image_url);
+        const compressedImage = await compressImage(formData.cover_image_url);
+        const extension = compressedImage.type.split('/')[1];
+        const finalImage = new File(
+          [compressedImage], 
+          `book_cover.${extension}`,
+          { type: compressedImage.type }
+        );
+        form.append('cover_image_url', finalImage);
       }
 
-      await api.post('/users/books/add/', form, {
+      // Log form data for debugging
+      for (let pair of form.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+      }
+
+      const response = await api.post('/books/add/', form, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
-      navigate('/books');
+      console.log('Success response:', response.data);
+      toast.success('Book added successfully!');
+      navigate('/');
     } catch (err) {
-      console.error('Error adding book:', err);
-      setError('Failed to add book. Please try again.');
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      console.error('Error details:', err);
+      
+      const errorMessage = err.response?.data?.error || 'Failed to add book. Please try again.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -43,12 +95,53 @@ function AddBook() {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setFormData(prev => ({
-        ...prev,
-        cover_image_url: file
-      }));
+    if (!file) return;
+
+    // Log the original file details
+    console.log('Original file:', {
+      name: file.name,
+      type: file.type,
+      size: file.size
+    });
+
+    if (file.size > MAX_FILE_SIZE) {
+      setError(`File size must be less than ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
+      e.target.value = '';
+      return;
     }
+
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      setError('File must be a JPEG, PNG, or WebP image');
+      e.target.value = '';
+      return;
+    }
+
+    // Use the original filename or generate one with proper extension
+    const filename = file.name || `book_cover_${Date.now()}.${file.type.split('/')[1]}`;
+
+    // Create a new file with the proper filename
+    const newFile = new File([file], filename, {
+      type: file.type
+    });
+
+    // Log the new file details
+    console.log('New file:', {
+      name: newFile.name,
+      type: newFile.type,
+      size: newFile.size
+    });
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    setFormData(prev => ({
+      ...prev,
+      cover_image_url: newFile
+    }));
+    setError('');
   };
 
   return (
@@ -91,19 +184,57 @@ function AddBook() {
         </div>
 
         <div className="mb-4">
+          <label htmlFor="genre" className="block text-gray-700 font-medium mb-2">
+            Genre
+          </label>
+          <input
+            type="text"
+            id="genre"
+            value={formData.genre}
+            onChange={(e) => setFormData({...formData, genre: e.target.value})}
+            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="description" className="block text-gray-700 font-medium mb-2">
+            Description (Optional)
+          </label>
+          <textarea
+            id="description"
+            value={formData.description}
+            onChange={(e) => setFormData({...formData, description: e.target.value})}
+            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows="4"
+          />
+        </div>
+
+        <div className="mb-4">
           <label htmlFor="cover" className="block text-gray-700 font-medium mb-2">
             Cover Image (Optional)
           </label>
           <input
             type="file"
             id="cover"
-            accept="image/*"
+            accept={ALLOWED_FILE_TYPES.join(',')}
             onChange={handleFileChange}
             className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <p className="mt-1 text-sm text-gray-500">
-            If no cover is provided, a random cover will be assigned.
-          </p>
+          {imagePreview && (
+            <div className="mt-2">
+              <img 
+                src={imagePreview} 
+                alt="Preview" 
+                className="w-32 h-48 object-cover rounded"
+              />
+            </div>
+          )}
+          <div className="mt-1 text-sm text-gray-500">
+            <p>If no cover is provided, a random cover will be assigned.</p>
+            <p>Maximum file size: 50MB</p>
+            <p>Allowed formats: JPEG, PNG, WebP</p>
+          </div>
         </div>
 
         <button
