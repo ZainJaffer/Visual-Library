@@ -23,6 +23,7 @@ from .serializers import (
     BookSerializer
 )
 from .permissions import IsBookOwner, IsUserBookOwner
+from .utils import cache_book_query
 
 
 # Protected Route
@@ -148,17 +149,26 @@ class ListUserBooksView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserBookSerializer
 
+    @cache_book_query
     def get_queryset(self):
-        queryset = UserBook.objects.filter(user=self.request.user)
+        # Use select_related to prevent N+1 queries
+        queryset = UserBook.objects.select_related('book').filter(
+            user=self.request.user
+        )
         
         # Add filtering by read status
         status_param = self.request.query_params.get('status', None)
+        favorite_param = self.request.query_params.get('favorite', None)
+
         if status_param == 'read':
             queryset = queryset.filter(is_read=True)
         elif status_param == 'unread':
             queryset = queryset.filter(is_read=False)
 
-        # For books without covers, assign random covers
+        if favorite_param:
+            queryset = queryset.filter(is_favorite=bool(int(favorite_param)))
+
+        # Keep the random cover functionality
         covers_dir = os.path.join(settings.MEDIA_ROOT, 'book_covers')
         if os.path.exists(covers_dir):
             available_covers = [

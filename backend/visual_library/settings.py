@@ -200,3 +200,29 @@ ALLOWED_UPLOAD_TYPES = [
     'image/webp',
 ]
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
+# Cache timeout for book queries (5 minutes)
+BOOK_CACHE_TTL = 300
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'users.utils': {  # This matches the __name__ in utils.py
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    },
+}
+

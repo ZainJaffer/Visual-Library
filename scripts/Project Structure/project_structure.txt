@@ -1,4 +1,4 @@
-Project Structure - Generated on 2024-11-19 11:25:37
+Project Structure - Generated on 2024-11-21 19:18:31
 ==================================================
 
 Starting from: C:\Users\Zain Jaffer\Desktop\Dev\Full Stack\Visual Library
@@ -8,11 +8,231 @@ Visual Library/
     mvp_frontend.html
     requirements.txt
     start.ps1
-    todo.txt
     backend/
         manage.py
         requirements.txt
         api/
+        media/
+            book_covers/
+                10069547.jpg
+                10110415.jpg
+                1023552.jpg
+                1046308.jpg
+                1048892.jpg
+                1051949.jpg
+                10521270.jpg
+                10527843.jpg
+                10580435.jpg
+                105814.jpg
+                10679669.jpg
+                10708272.jpg
+                10844225.jpg
+                11024634.jpg
+                11048623.jpg
+                11100465.jpg
+                11153508.jpg
+                11196262.jpg
+                11248037.jpg
+                11272464.jpg
+                11929973.jpg
+                119317.jpg
+                12015446.jpg
+                12015500.jpg
+                12043351.jpg
+                12179260.jpg
+                12216503.jpg
+                12307847.jpg
+                12356249.jpg
+                12376585.jpg
+                12567961.jpg
+                12621906.jpg
+                12648419.jpg
+                12648656.jpg
+                12648657.jpg
+                12648659.jpg
+                12657405.jpg
+                12707846.jpg
+                12715730.jpg
+                12717083.jpg
+                12720687.jpg
+                12721865.jpg
+                12726168.jpg
+                12728198.jpg
+                12728401.jpg
+                12818862.jpg
+                12887819.jpg
+                12915110.jpg
+                12973053.jpg
+                12986869.jpg
+                12993656.jpg
+                13136548.jpg
+                13140934.jpg
+                13151356.jpg
+                13300802.jpg
+                13301713.jpg
+                13670505.jpg
+                13699667.jpg
+                13859660.jpg
+                14066646.jpg
+                14314858.jpg
+                14348537.jpg
+                14357835.jpg
+                14358814.jpg
+                14428305.jpg
+                14566393.jpg
+                14582832.jpg
+                14590159.jpg
+                14627062.jpg
+                14627509.jpg
+                14641084.jpg
+                14650236.jpg
+                14651566.jpg
+                14653991.jpg
+                14657166.jpg
+                1473556.jpg
+                1814681.jpg
+                1844837.jpg
+                1956635.jpg
+                1991009.jpg
+                2011286.jpg
+                207141.jpg
+                207226.jpg
+                2293974.jpg
+                249095.jpg
+                2560652.jpg
+                2748335.jpg
+                2757973.jpg
+                2761207.jpg
+                2788688.jpg
+                28174.jpg
+                284442.jpg
+                2895793.jpg
+                295537.jpg
+                295773.jpg
+                2_2.jpg
+                36314.jpg
+                411542.jpg
+                448130.jpg
+                4656607.jpg
+                479102.jpg
+                490106.jpg
+                4909640.jpg
+                4910951.jpg
+                502618.jpg
+                5188445.jpg
+                552443.jpg
+                5548088.jpg
+                5647361.jpg
+                5654516.jpg
+                5788361.jpg
+                5890987.jpg
+                5894747.jpg
+                5951738.jpg
+                5981967.jpg
+                5992814.jpg
+                6419199.jpg
+                6482238.jpg
+                6573517.jpg
+                6596872.jpg
+                6644514.jpg
+                6717853.jpg
+                6962564.jpg
+                6976035.jpg
+                6980094.jpg
+                7083790.jpg
+                7140335.jpg
+                7162423.jpg
+                719415.jpg
+                7205924.jpg
+                7263483.jpg
+                7420215.jpg
+                78169.jpg
+                7901303.jpg
+                7969785.jpg
+                8003766.jpg
+                8216412.jpg
+                8221267.jpg
+                8222090.jpg
+                8229224.jpg
+                8231413.jpg
+                8231444.jpg
+                8231823.jpg
+                8235355.jpg
+                8236295.jpg
+                8236412.jpg
+                8236915.jpg
+                8236920.jpg
+                8236937.jpg
+                8237041.jpg
+                8237052.jpg
+                8237593.jpg
+                8239401.jpg
+                8242206.jpg
+                8242755.jpg
+                8242857.jpg
+                8243078.jpg
+                8243267.jpg
+                8243314.jpg
+                8243336.jpg
+                8243609.jpg
+                8243922.jpg
+                8247724.jpg
+                8259296.jpg
+                8267822.jpg
+                8288051.jpg
+                8303480.jpg
+                8311421.jpg
+                8311819.jpg
+                8392798.jpg
+                8396638.jpg
+                8404327.jpg
+                8443662.jpg
+                8465393.jpg
+                8567959.jpg
+                8569284.jpg
+                8570003.jpg
+                8595966.jpg
+                8597022.jpg
+                8634250.jpg
+                8684447.jpg
+                8747028.jpg
+                8775559.jpg
+                8923621.jpg
+                8958592.jpg
+                8980913.jpg
+                9000447.jpg
+                9000512.jpg
+                9009316.jpg
+                902038.jpg
+                902122.jpg
+                902186.jpg
+                9022521.jpg
+                9165528.jpg
+                9176033.jpg
+                921610.jpg
+                9255229.jpg
+                9255992.jpg
+                9256043.jpg
+                9267242.jpg
+                9278292.jpg
+                9278312.jpg
+                9280435.jpg
+                93020.jpg
+                93023.jpg
+                9317372.jpg
+                9330264.jpg
+                9334567.jpg
+                9351865.jpg
+                9411873.jpg
+                968312.jpg
+                973851.jpg
+                9996328.jpg
+                book_cover.jpeg
+                book_cover_92u3kOM.jpeg
+                SPA_C01.jpg
+                SPA_C01_bFJjcMB.jpg
+                SPA_C01_TuIm6jk.jpg
+                SPA_C02.jpg
         users/
             admin.py
             apps.py
@@ -36,6 +256,7 @@ Visual Library/
                 0003_userbook.py
                 0004_alter_customuser_email.py
                 0005_alter_customuser_options_alter_customuser_managers_and_more.py
+                0006_alter_book_cover_image_url.py
                 __init__.py
         visual_library/
             .env
@@ -61,6 +282,7 @@ Visual Library/
             index.css
             main.jsx
             components/
+                BookRow.jsx
                 Navbar.jsx
                 TestProtected.jsx
                 auth/
@@ -72,9 +294,10 @@ Visual Library/
                 AuthContext.jsx
             pages/
                 AddBook.jsx
-                BookList.jsx
+                Discover.jsx
                 Home.jsx
                 Login.jsx
+                MyBooks.jsx
                 Register.jsx
             services/
                 api.js

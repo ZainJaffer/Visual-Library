@@ -55,5 +55,11 @@ class UserBook(models.Model):
     is_read = models.BooleanField(default=False)
     is_favorite = models.BooleanField(default=False)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'is_read', 'is_favorite']),
+            models.Index(fields=['user', 'book']),
+        ]
+
     def __str__(self):
         return f"{self.user.email} - {self.book.title}"
