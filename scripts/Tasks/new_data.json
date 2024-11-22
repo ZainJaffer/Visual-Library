@@ -1,5 +1,377 @@
 [
     {
+        "Card Name": "Enhance Smart Favorites Display",
+        "Description": [
+            "- Update Favorites Visual System",
+            "- Update wishlist icon for unread favorites",
+            "- Keep star icon for read favoritesAdd visual distinction between wishlist (unread + favorite) and collection (read + favorite)",
+            "",
+            "**Details**: Makes the favorite system more intuitive by using different icons based on read status. When a book is unread, favoriting it will use a wishlist-appropriate icon, while read books will keep the star icon for favorites. This requires a simple frontend update to the BookRow component to show different icons based on the book's read status"
+        ],
+        "Labels": [
+            "Frontend"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Optimize Book Query Performance",
+        "Description": [
+            "- Add database indexes for combined status queries",
+            "- Implement query optimization for favorites filtering",
+            "- Add caching for frequent status combinations",
+            "- \u200c",
+            "- **Details**: Essential performance work needed before adding real-time features. Creates database indexes for the new combined status queries, implements query optimizations to prevent N+1 problems, and sets up caching. This ensures the application remains responsive as users' libraries grow and prevents slow response times during filtering and searching"
+        ],
+        "Labels": [
+            "Backend"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Implement Global Error Handling",
+        "Description": [
+            "- Create error handling utilities for API failures",
+            "- Add user-friendly error messages",
+            "- Implement retry and fallback mechanisms",
+            "",
+            "Creates a comprehensive error handling system for both internal and external API interactions. Handles network issues, timeouts, and invalid states while providing clear feedback to users. Essential for integrating with Google Books API and implementing real-time features reliably."
+        ],
+        "Labels": [
+            "Frontend",
+            "API"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Integrate Google Books API Search",
+        "Description": [
+            "- Set up Google Books API client service",
+            "- Create search endpoint with error handling",
+            "- Implement data normalization for API responses",
+            "",
+            " **Details**: Implements core book discovery by creating a service layer for Google Books API interaction. Handles authentication, rate limiting, and caching. Normalizes external data to match our application's model, ensuring consistent structure regardless of source and gracefully handling missing data."
+        ],
+        "Labels": [
+            "Backend",
+            "API"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Create Book Details Page Route and Layout",
+        "Description": [
+            "- Implement dedicated route for book details page (/books/:id)",
+            "- Create detailed book information layout with cover, metadata, and description",
+            "- Add click navigation from book cards to details page",
+            "",
+            "Creates the foundation for viewing individual book details. When users click any book in the library or search results, they'll be taken to a dedicated page showing comprehensive information about that book. Implements proper routing and navigation, ensuring browser history works correctly and users can easily return to their previous view."
+        ],
+        "Labels": [
+            "Frontend"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Add Reading Status Management to Book Detail",
+        "Description": [
+            "- Add reading status controls to book details page",
+            "- Create currently reading row on homepage with prominent placement",
+            "- Implement status transitions (unread \u2192 reading \u2192 read)",
+            "",
+            "**Details**: Adds reading status management to the book details page while also creating the homepage display for currently reading books. Implements clear status controls in the context of detailed book information, with changes reflected immediately in the homepage view."
+        ],
+        "Labels": [
+            "Frontend",
+            "Backend",
+            "API"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Build Discover Search Interface",
+        "Description": [
+            "- Create search results grid with book details",
+            "- Add contextual favorite buttons (Add to Wishlist/Collection)",
+            "- Implement one-click add to library functionality",
+            "",
+            "Creates the main interface for finding and adding new books. Displays search results in a grid format with enough detail for users to make decisions. Implements smart favorite buttons that adapt based on book status (wishlist vs collection) and enables quick addition to library."
+        ],
+        "Labels": [
+            "Frontend"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Implement Real-time Search in My Books",
+        "Description": [
+            "- Add search bar component with real-time filtering capability",
+            "- Implement fuzzy search using Fuse.js for typo tolerance",
+            "- Add loading states and error handling for search results",
+            "",
+            " **Details**: Creates a responsive search experience within the user's existing library. Uses fuzzy search to handle typos and partial matches, making it easier to find books. Implements real-time filtering that updates as users type, with appropriate loading states and error handling for a smooth experience."
+        ],
+        "Labels": [
+            "Frontend",
+            "API"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Create Recently Added Books Row",
+        "Description": [
+            "- Implement horizontal scrolling row for recent books",
+            "- Add backend endpoint to fetch latest 25 books",
+            "- Integrate with existing book display components",
+            "- Should only show when there is at least 1 book recently added",
+            "",
+            "**Details**: Adds a dynamic section showing recently added books, helping users track new additions to their library. Implements horizontal scrolling for efficient space usage and integrates with existing display components. Creates a dedicated endpoint for fetching recent books efficiently"
+        ],
+        "Labels": [
+            "Frontend",
+            "API"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Implement Cover Image Management in Book Details",
+        "Description": [
+            "- Add cover management section to book details page",
+            "- Create image preview and validation within details view",
+            "- Implement fallback image system with clear user feedback",
+            "",
+            "**Details**: Integrates cover management functionality directly into the book details page. Users can manage book covers in context while viewing other book information. Provides clear preview and feedback mechanisms within the details view."
+        ],
+        "Labels": [
+            "Frontend",
+            "API"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Create Cover Image API Endpoints",
+        "Description": [
+            "- Add endpoint for updating book cover URLs",
+            "- Implement image URL validation",
+            "- Create error handling for invalid images",
+            "",
+            "**Details**: Enables book cover management functionality. Creates endpoints for updating cover images, validates URLs to ensure they point to actual images, and handles cases where images become unavailable. Important for maintaining library visual appeal and handling different cover versions."
+        ],
+        "Labels": [
+            "Backend",
+            "API"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Implement Book Notes Backend",
+        "Description": [
+            "- Create Notes model with character limit constraints",
+            "- Add API endpoints for CRUD operations",
+            "- Implement validation and error handling",
+            "",
+            " **Details**: Establishes the foundation for personal book notes. Creates a new Notes model with appropriate constraints, implements endpoints for managing notes, and ensures proper validation. This enables users to maintain private notes about their books with reliable storage and retrieval."
+        ],
+        "Labels": [
+            "Backend",
+            "API"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Implement Book Details Page Features",
+        "Description": [
+            "- Add status controls (read/unread, currently reading, favorites)",
+            "- Create cover image management section with alternative covers",
+            "- Implement notes section with edit capabilities",
+            "",
+            "Builds the interactive features of the book details page. Creates a central hub where users can manage all aspects of a book: change its status, update its cover, add notes, and more. All book management actions are consolidated in this single, detailed view for a cohesive user experience."
+        ],
+        "Labels": [
+            "Frontend",
+            "API"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Add Cover Selection to Book Details",
+        "Description": [
+            "- Integrate cover gallery modal into book details page",
+            "- Add custom cover upload option within details view",
+            "- Create seamless cover switching experience",
+            "",
+            "Implements cover selection functionality directly within the book details context. Users can browse alternative covers or upload custom ones while viewing the book's complete information. Creates a cohesive experience for managing book appearance."
+        ],
+        "Labels": [
+            "Frontend",
+            "API"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Implement Notes Section in Book Details",
+        "Description": [
+            "- Build notes section within book details page",
+            "- Add edit/delete functionality with confirmations",
+            "- Implement auto-save and error handling for notes",
+            "",
+            " Integrates note-taking functionality directly into the book details page. Creates a dedicated section where users can view and edit notes while seeing other book information. Implements seamless editing experience within the context of the details view."
+        ],
+        "Labels": [
+            "Frontend"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Add API Response Logging",
+        "Description": [
+            "- Set up logging for API interactions",
+            "- Create error tracking system",
+            "- Implement monitoring for API failures",
+            "",
+            "Implements comprehensive logging and monitoring for all API interactions. Tracks errors and unusual patterns, especially with external API calls. Creates a monitoring system to alert on API failures or performance issues, ensuring reliable operation and quick problem detection"
+        ],
+        "Labels": [
+            "Dev Ops",
+            "Backend"
+        ],
+        "Stage": [
+            "To Do"
+        ]
+    },
+    {
+        "Card Name": "Enhance Book Categories Display",
+        "Description": [
+            "- Group books by genre in horizontal rows",
+            "- Add genre headers and section navigation",
+            "- Implement category-based filtering",
+            "- Restyle to grey/black theme",
+            "- Implement My Books and Discover pages"
+        ],
+        "Labels": [
+            "Frontend",
+            "API"
+        ],
+        "Stage": [
+            "Done"
+        ]
+    },
+    {
+        "Card Name": "Implement Book Card States",
+        "Description": [
+            "- Add loading states for book card interactions",
+            "- Add transition animations for status changes"
+        ],
+        "Labels": [
+            "Frontend"
+        ],
+        "Stage": [
+            "Done"
+        ]
+    },
+    {
+        "Card Name": "Add Section Navigation Controls",
+        "Description": [
+            "- Add left/right scroll controls for book rows",
+            "- Implement smooth scrolling indicators",
+            "- Add visual feedback for scrollable content"
+        ],
+        "Labels": [
+            "Frontend"
+        ],
+        "Stage": [
+            "Done"
+        ]
+    },
+    {
+        "Card Name": "Implement Horizontal Scrolling Rows",
+        "Description": [
+            "- Convert book lists to horizontal scrolling containers",
+            "- Add smooth scrolling behavior and overflow handling",
+            "- Implement responsive grid layout for different screen sizes"
+        ],
+        "Labels": [
+            "Frontend"
+        ],
+        "Stage": [
+            "Done"
+        ]
+    },
+    {
+        "Card Name": "Implement Book Cover Upload Feature",
+        "Description": [
+            "- Add image upload field to AddBook form with preview and validation (max size, format)",
+            "- Configure local media storage and URL handling for uploaded images",
+            "- Add image compression and error handling for failed uploads"
+        ],
+        "Labels": [
+            "Frontend",
+            "Backend"
+        ],
+        "Stage": [
+            "Done"
+        ]
+    },
+    {
+        "Card Name": "Implement Default Book Cover System",
+        "Description": [
+            "- Implement random cover selection from media library when no cover\\_image\\_url provided",
+            "- Add image optimization and lazy loading for performance"
+        ],
+        "Labels": [
+            "Frontend",
+            "Assets"
+        ],
+        "Stage": [
+            "Done"
+        ]
+    },
+    {
+        "Card Name": "Generate Card & Book Assets",
+        "Description": [
+            "- Use Open Library API to generate books and image covers",
+            "- Generate JSON file with 200 books (titles, authors, descriptions) evenly distributed across 8-10 genres using AI",
+            "- Create 20 AI-generated default book covers at 400x600px JPG format with consistent style"
+        ],
+        "Labels": [
+            "Assets",
+            "Backend",
+            "API"
+        ],
+        "Stage": [
+            "Done"
+        ]
+    },
+    {
         "Card Name": "Add Favorite Toggle Button",
         "Description": [
             "- Add favorite icon button to book list items",
@@ -446,6 +818,93 @@
         ],
         "Stage": [
             "Done"
+        ]
+    },
+    {
+        "Card Name": "Create Basic Test Plan",
+        "Description": [
+            "- Document critical user flows for manual testing",
+            "- Create checklist for responsive layout verification\"",
+            "- Add basic Jest tests for key React components"
+        ],
+        "Labels": [
+            "Testing"
+        ],
+        "Stage": [
+            "Backlog"
+        ]
+    },
+    {
+        "Card Name": "Add Sort Functionality for Books",
+        "Description": [
+            "- Implement backend endpoint for sorting by title/author",
+            "- Add sorting controls to frontend book sections",
+            "- Update BookList component to handle sort parameters"
+        ],
+        "Labels": [
+            "Frontend",
+            "API"
+        ],
+        "Stage": [
+            "Backlog"
+        ]
+    },
+    {
+        "Card Name": "Create Automated E2E Test Suite",
+        "Description": [
+            "- Set up Cypress for cross-browser testing",
+            "- Create test scripts for database population verification",
+            "- Implement visual regression tests for responsive layouts"
+        ],
+        "Labels": [
+            "Testing"
+        ],
+        "Stage": [
+            "Backlog"
+        ]
+    },
+    {
+        "Card Name": "Implement Book Deletion Flow",
+        "Description": [
+            "- Create confirmation modal for delete action",
+            "- Handle deletion success/failure states",
+            "- Implement smooth removal animation from book list"
+        ],
+        "Labels": [
+            "Frontend",
+            "API"
+        ],
+        "Stage": [
+            "Backlog"
+        ]
+    },
+    {
+        "Card Name": "Create Book Edit Modal",
+        "Description": [
+            "- Create modal component for editing book details",
+            "- Implement form validation and error handling",
+            "- Add optimistic updates for edited book data"
+        ],
+        "Labels": [
+            "Frontend",
+            "API"
+        ],
+        "Stage": [
+            "Backlog"
+        ]
+    },
+    {
+        "Card Name": "Implement Book Context Menu",
+        "Description": [
+            "- Add right-click context menu with edit/delete options",
+            "- Create three-dot menu overlay on hover (mobile/tablet fallback)",
+            "- Implement smooth transitions for menu appearance/disappearance\""
+        ],
+        "Labels": [
+            "Frontend"
+        ],
+        "Stage": [
+            "Backlog"
         ]
     },
     {

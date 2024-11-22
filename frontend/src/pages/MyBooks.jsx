@@ -34,7 +34,14 @@ function MyBooks() {
     const newValue = field === 'is_read' ? !book.is_read : !book.is_favorite;
 
     try {
-      await api.put(`/users/books/${bookId}/update-status/`, { [field]: newValue });
+      if (field === 'is_read' && newValue === true) {
+        await api.put(`/users/books/${bookId}/update-status/`, { 
+          is_read: true,
+          is_favorite: false 
+        });
+      } else {
+        await api.put(`/users/books/${bookId}/update-status/`, { [field]: newValue });
+      }
       
       if (field === 'is_favorite') {
         setBooks(prevBooks => 

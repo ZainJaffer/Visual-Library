@@ -1,3 +1,5 @@
+# TYPE .\start.ps1 in terminal to start the script
+
 # Activate virtual environment
 .\venv\Scripts\activate.ps1
 cd backend

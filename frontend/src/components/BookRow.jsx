@@ -186,7 +186,11 @@ export const BookRow = React.memo(({ title, books, onToggleStatus }) => {
                     />
                     
                     {book.is_favorite && (
-                      <div className="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
+                      <div className={`absolute top-2 right-2 ${
+                        book.is_read 
+                          ? 'bg-red-500'  // Keep red for read favorites
+                          : 'bg-blue-500' // New blue for wishlist items
+                        } text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg`}>
                         <span className="text-base">★</span>
                       </div>
                     )}
@@ -220,9 +224,12 @@ export const BookRow = React.memo(({ title, books, onToggleStatus }) => {
                         onClick={() => onToggleStatus(book.id, 'is_favorite')}
                         className={`w-9 flex items-center justify-center rounded-lg border ${
                           book.is_favorite
-                            ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
-                            : 'border-gray-200 hover:bg-gray-50'
+                            ? book.is_read 
+                              ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'  // Read + Favorite
+                              : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100'  // Unread + Favorite (Wishlist)
+                            : 'border-gray-200 hover:bg-gray-50'  // Not favorited
                         }`}
+                        title={book.is_read ? 'Add to Favorites' : 'Add to Wishlist'}
                       >
                         <span className="text-lg">{book.is_favorite ? '★' : '☆'}</span>
                       </button>

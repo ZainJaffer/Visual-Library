@@ -34,34 +34,25 @@ function Discover() {
     const newValue = field === 'is_read' ? !book.is_read : !book.is_favorite;
 
     try {
-      await api.put(`/users/books/${bookId}/update-status/`, { [field]: newValue });
-      
-      if (field === 'is_favorite') {
+      if (field === 'is_read' && newValue === true) {
+        await api.put(`/users/books/${bookId}/update-status/`, { 
+          is_read: true,
+          is_favorite: false 
+        });
+        
         setBooks(prevBooks => 
           prevBooks.map(b => 
-            b.id === bookId ? { ...b, is_favorite: newValue } : b
+            b.id === bookId ? { ...b, is_read: true, is_favorite: false } : b
           )
         );
       } else {
-        const bookElement = document.getElementById(`book-${bookId}`);
-        if (bookElement) {
-          bookElement.style.transition = 'all 0.3s ease-out';
-          bookElement.style.opacity = '0';
-          bookElement.style.transform = 'scale(0.95)';
-        }
+        await api.put(`/users/books/${bookId}/update-status/`, { [field]: newValue });
         
-        setTimeout(() => {
-          setBooks(prevBooks => 
-            prevBooks.map(b => 
-              b.id === bookId ? { ...b, is_read: newValue } : b
-            )
-          );
-
-          if (bookElement && book.is_favorite) {
-            bookElement.style.opacity = '1';
-            bookElement.style.transform = 'scale(1)';
-          }
-        }, 300);
+        setBooks(prevBooks => 
+          prevBooks.map(b => 
+            b.id === bookId ? { ...b, [field]: newValue } : b
+          )
+        );
       }
     } catch (err) {
       console.error('Error updating book:', err);
