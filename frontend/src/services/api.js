@@ -28,13 +28,41 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', error.response)
-    if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('token')
-      window.location.href = '/login'
+    console.log('API Interceptor caught error:', error);
+    
+    let errorMessage = 'An unexpected error occurred';
+    
+    if (!error.response) {
+      errorMessage = 'Unable to connect to server. Please check your connection.';
+    } else {
+      console.log('Error status:', error.response.status);
+      console.log('Error data:', error.response.data);
+      
+      switch (error.response.status) {
+        case 401:
+          errorMessage = 'Your session has expired. Please log in again.';
+          localStorage.removeItem('token');
+          setTimeout(() => window.location.href = '/login', 2000);
+          break;
+        case 400:
+          errorMessage = error.response.data?.error || 'Invalid request. Please check your input.';
+          break;
+        case 404:
+          errorMessage = error.response.data?.error || 'The requested resource was not found.';
+          break;
+        case 500:
+          errorMessage = error.response.data?.error || 'Server error. Please try again later.';
+          break;
+      }
     }
-    return Promise.reject(error)
+
+    console.log('Returning error with message:', errorMessage);
+    
+    return Promise.reject({
+      message: errorMessage,
+      originalError: error,
+      status: error.response?.status
+    });
   }
 )
 

@@ -2,30 +2,17 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { BookRow } from '../components/BookRow';
+import { useBooks } from '../hooks/useBooks';
+import { ErrorDisplay } from '../components/ErrorDisplay';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 function MyBooks() {
   const { user } = useAuth();
-  const [books, setBooks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { books, loading, error, fetchBooks } = useBooks();
 
   useEffect(() => {
-    const fetchBooks = async () => {
-      if (!user || !user.token) return;
-      
-      try {
-        const response = await api.get('/users/books/');
-        setBooks(response.data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching books:', err);
-        setError('Failed to fetch books');
-        setLoading(false);
-      }
-    };
-
     fetchBooks();
-  }, [user]);
+  }, []);
 
   const toggleBookStatus = async (bookId, field) => {
     const book = books.find(b => b.id === bookId);
@@ -95,11 +82,11 @@ function MyBooks() {
     };
   }, [books]);
 
-  if (loading) return <div className="p-4">Loading...</div>;
-  if (error) return <div className="p-4 text-red-500">{error}</div>;
+  if (loading) return <LoadingSpinner />;
 
   return (
     <div className="bg-slate-100 min-h-screen">
+      <ErrorDisplay error={error} />
       <div className="max-w-[1320px] mx-auto px-4 py-16 space-y-12">
         {/* Favorites (Read) */}
         {bookCategories['Favorites'].length > 0 && (

@@ -14,6 +14,7 @@ from django.conf import settings
 from PIL import Image
 import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from rest_framework.exceptions import NotFound, ValidationError, APIException
 
 # Local imports
 from .models import CustomUser, UserBook, Book
@@ -25,6 +26,13 @@ from .serializers import (
 from .permissions import IsBookOwner, IsUserBookOwner
 from .utils import cache_book_query
 
+# Add these custom exceptions at the top of the file
+class ResourceNotFoundError(NotFound):
+    pass
+
+class ServerError(APIException):
+    status_code = 500
+    default_detail = 'Internal Server Error'
 
 # Protected Route
 @api_view(['GET'])
@@ -262,3 +270,21 @@ def get_random_cover(request):
             'status': 'error',
             'message': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# Add a test endpoint
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def test_errors(request):
+    error_type = request.query_params.get('error', 'none')
+    
+    if error_type == 'bad_request':
+        return Response(
+            {"error": "Invalid data provided"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    elif error_type == 'not_found':
+        raise ResourceNotFoundError('Test resource not found')
+    elif error_type == 'server_error':
+        raise ServerError('Test server error')
+    
+    return Response({'message': 'No error'})

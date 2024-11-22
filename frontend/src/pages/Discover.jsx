@@ -2,30 +2,17 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { BookRow } from '../components/BookRow';
+import { ErrorDisplay } from '../components/ErrorDisplay';
+import { useBooks } from '../hooks/useBooks';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 function Discover() {
   const { user } = useAuth();
-  const [books, setBooks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { books, loading, error, fetchBooks } = useBooks();
 
   useEffect(() => {
-    const fetchBooks = async () => {
-      if (!user || !user.token) return;
-      
-      try {
-        const response = await api.get('/users/books/');
-        setBooks(response.data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching books:', err);
-        setError('Failed to fetch books');
-        setLoading(false);
-      }
-    };
-
     fetchBooks();
-  }, [user]);
+  }, []);
 
   const toggleBookStatus = async (bookId, field) => {
     const book = books.find(b => b.id === bookId);
@@ -56,7 +43,9 @@ function Discover() {
       }
     } catch (err) {
       console.error('Error updating book:', err);
-      setError('Failed to update book status');
+      setError({
+        message: err.message || 'An unexpected error occurred'
+      });
     }
   };
 
@@ -79,8 +68,8 @@ function Discover() {
     };
   }, [books]);
 
-  if (loading) return <div className="p-4">Loading...</div>;
-  if (error) return <div className="p-4 text-red-500">{error}</div>;
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorDisplay error={error} />;
 
   return (
     <div className="bg-slate-100 min-h-screen">

@@ -7,6 +7,9 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import MyBooks from './pages/MyBooks'
 import Discover from './pages/Discover'
+import TestErrors from './components/TestErrors';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 console.log('App.jsx loaded');
 
@@ -54,7 +57,28 @@ function App() {
               path="*" 
               element={<div>Page not found</div>} 
             />
+
+            {/* Test errors route */}
+            <Route 
+              path="/test-errors" 
+              element={
+                <ProtectedRoute>
+                  <TestErrors />
+                </ProtectedRoute>
+              } 
+            />
           </Routes>
+          <ToastContainer 
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
         </div>
       </Router>
     </AuthProvider>

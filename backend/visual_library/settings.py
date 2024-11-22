@@ -64,6 +64,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'users.middleware.ErrorHandlingMiddleware',
 ]
 
 ROOT_URLCONF = 'visual_library.urls'
@@ -213,15 +214,28 @@ BOOK_CACHE_TTL = 300
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
-        'users.utils': {  # This matches the __name__ in utils.py
-            'handlers': ['console'],
+        'users': {
+            'handlers': ['console', 'file'],
             'level': 'INFO',
+            'propagate': True,
         },
     },
 }
