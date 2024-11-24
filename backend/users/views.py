@@ -288,3 +288,57 @@ def test_errors(request):
         raise ServerError('Test server error')
     
     return Response({'message': 'No error'})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_book(request):
+    try:
+        is_manual = not request.data.get('google_books_id')
+        
+        # For manual uploads
+        if is_manual:
+            book = Book.objects.create(
+                title=request.data.get('title'),
+                author=request.data.get('author'),
+                genre=request.data.get('genre'),
+                description=request.data.get('description'),
+                cover_image=request.data.get('cover_image'),
+                is_manual=True
+            )
+        # For Google Books API
+        else:
+            book, created = Book.objects.get_or_create(
+                google_books_id=request.data.get('google_books_id'),
+                defaults={
+                    'title': request.data.get('title'),
+                    'author': request.data.get('author'),
+                    'genre': request.data.get('genre'),
+                    'description': request.data.get('description'),
+                    'cover_image_url': request.data.get('cover_image_url'),
+                    'is_manual': False
+                }
+            )
+
+        # Create the UserBook relationship
+        user_book, created = UserBook.objects.get_or_create(
+            user=request.user,
+            book=book,
+            defaults={
+                'is_read': False,
+                'is_favorite': False
+            }
+        )
+
+        if not created:
+            return Response(
+                {'error': 'Book already in your library'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response({'message': 'Book added successfully'}, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

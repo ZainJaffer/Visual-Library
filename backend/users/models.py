@@ -36,12 +36,47 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 class Book(models.Model):
-    title = models.CharField(max_length=200)
-    author = models.CharField(max_length=200)
-    genre = models.CharField(max_length=100)
+    title = models.CharField(max_length=500)
+    author = models.CharField(max_length=500)
+    genre = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
-    cover_image_url = models.ImageField(
+    
+    # For manually uploaded books and Open Library books
+    cover_image = models.ImageField(
         upload_to='book_covers/',
+        null=True,
+        blank=True
+    )
+    
+    # For Google Books API books
+    cover_image_url = models.URLField(
+        max_length=1000,
+        null=True,
+        blank=True
+    )
+    
+    # Source tracking
+    SOURCE_CHOICES = [
+        ('manual', 'Manual Upload'),
+        ('google', 'Google Books API'),
+        ('openlibrary', 'Open Library')
+    ]
+    source = models.CharField(
+        max_length=20,
+        choices=SOURCE_CHOICES,
+        default='manual'
+    )
+    
+    # Optional external IDs
+    google_books_id = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True
+    )
+    openlibrary_id = models.CharField(
+        max_length=100,
+        unique=True,
         null=True,
         blank=True
     )
@@ -49,6 +84,13 @@ class Book(models.Model):
     def __str__(self):
         return self.title
     
+    @property
+    def cover_url(self):
+        """Returns the appropriate cover image source"""
+        if self.source in ['manual', 'openlibrary'] and self.cover_image:
+            return self.cover_image.url
+        return self.cover_image_url
+
 class UserBook(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)

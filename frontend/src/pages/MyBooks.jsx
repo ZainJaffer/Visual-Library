@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { BookRow } from '../components/BookRow';
+import { BookRow } from '../components/books/BookRow';
+import { BookSearch } from '../components/books/BookSearch';
 import { useBooks } from '../hooks/useBooks';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { GoogleBooksTest } from '../components/books/GoogleBooksTest';
 
 function MyBooks() {
   const { user } = useAuth();
@@ -82,12 +84,37 @@ function MyBooks() {
     };
   }, [books]);
 
+  const handleAddBook = async (bookData) => {
+    try {
+      // First, add the book to your backend
+      const response = await api.post('/users/books/', {
+        title: bookData.title,
+        author: bookData.author,
+        genre: bookData.genre,
+        description: bookData.description,
+        cover_image_url: bookData.cover_image_url,
+        google_books_id: bookData.google_books_id
+      });
+
+      // Refresh the books list
+      fetchBooks();
+    } catch (err) {
+      console.error('Error adding book:', err);
+      setError('Failed to add book to your library');
+    }
+  };
+
   if (loading) return <LoadingSpinner />;
 
   return (
     <div className="bg-slate-100 min-h-screen">
       <ErrorDisplay error={error} />
       <div className="max-w-[1320px] mx-auto px-4 py-16 space-y-12">
+        <GoogleBooksTest />
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">Add Books to Your Library</h2>
+          <BookSearch onBookSelect={handleAddBook} />
+        </div>
         {/* Favorites (Read) */}
         {bookCategories['Favorites'].length > 0 && (
           <BookRow 

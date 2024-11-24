@@ -109,7 +109,9 @@ class Command(BaseCommand):
                             author=', '.join(authors),
                             genre=genre,
                             description=description,
-                            cover_image_url=cover_path
+                            cover_image=cover_path,
+                            source='openlibrary',
+                            openlibrary_id=work_id
                         )
                         books.append(book_obj)
                         self.stdout.write(self.style.SUCCESS(f"Created book: {title}"))

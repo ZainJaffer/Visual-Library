@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 import 'react-lazy-load-image-component/src/effects/blur.css';
-import api from '../services/api';
+import api from '../../services/api';
 
 // Helper function for formatting authors
 const formatAuthors = (authorString) => {

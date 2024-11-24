@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { BookRow } from '../components/BookRow';
+import { BookRow } from '../components/books/BookRow';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { useBooks } from '../hooks/useBooks';
 import { LoadingSpinner } from '../components/LoadingSpinner';
