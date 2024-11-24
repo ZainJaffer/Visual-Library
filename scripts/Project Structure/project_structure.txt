@@ -1,4 +1,4 @@
-Project Structure - Generated on 2024-11-21 19:18:31
+Project Structure - Generated on 2024-11-23 18:52:26
 ==================================================
 
 Starting from: C:\Users\Zain Jaffer\Desktop\Dev\Full Stack\Visual Library
@@ -9,6 +9,7 @@ Visual Library/
     requirements.txt
     start.ps1
     backend/
+        debug.log
         manage.py
         requirements.txt
         api/
@@ -236,11 +237,14 @@ Visual Library/
         users/
             admin.py
             apps.py
+            exceptions.py
+            middleware.py
             models.py
             permissions.py
             serializers.py
             tests.py
             urls.py
+            utils.py
             views.py
             __init__.py
             books/
@@ -257,6 +261,8 @@ Visual Library/
                 0004_alter_customuser_email.py
                 0005_alter_customuser_options_alter_customuser_managers_and_more.py
                 0006_alter_book_cover_image_url.py
+                0007_book_cover_image_book_google_books_id_book_is_manual_and_more.py
+                0008_remove_book_is_manual_book_openlibrary_id_and_more.py
                 __init__.py
         visual_library/
             .env
@@ -282,16 +288,23 @@ Visual Library/
             index.css
             main.jsx
             components/
-                BookRow.jsx
+                ErrorDisplay.jsx
+                LoadingSpinner.jsx
                 Navbar.jsx
+                TestErrors.jsx
                 TestProtected.jsx
                 auth/
                     LoginForm.jsx
                     ProtectedRoute.jsx
                     RegisterForm.jsx
                 books/
+                    BookRow.jsx
+                    BookSearch.jsx
+                    GoogleBooksTest.jsx
             context/
                 AuthContext.jsx
+            hooks/
+                useBooks.js
             pages/
                 AddBook.jsx
                 Discover.jsx
@@ -302,6 +315,9 @@ Visual Library/
             services/
                 api.js
                 auth.js
+                googleBooks.js
+            utils/
+                errorHandler.js
     scripts/
         Project Structure/
             print_structure.py

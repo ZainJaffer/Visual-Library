@@ -40,20 +40,8 @@ class Book(models.Model):
     author = models.CharField(max_length=500)
     genre = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
-    
-    # For manually uploaded books and Open Library books
-    cover_image = models.ImageField(
-        upload_to='book_covers/',
-        null=True,
-        blank=True
-    )
-    
-    # For Google Books API books
-    cover_image_url = models.URLField(
-        max_length=1000,
-        null=True,
-        blank=True
-    )
+    cover_image = models.ImageField(upload_to='book_covers/', null=True, blank=True)
+    cover_image_url = models.URLField(max_length=1000, null=True, blank=True)
     
     # Source tracking
     SOURCE_CHOICES = [
@@ -67,19 +55,8 @@ class Book(models.Model):
         default='manual'
     )
     
-    # Optional external IDs
-    google_books_id = models.CharField(
-        max_length=100,
-        unique=True,
-        null=True,
-        blank=True
-    )
-    openlibrary_id = models.CharField(
-        max_length=100,
-        unique=True,
-        null=True,
-        blank=True
-    )
+    google_books_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    openlibrary_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     
     def __str__(self):
         return self.title

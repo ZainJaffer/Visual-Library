@@ -26,6 +26,11 @@ class CustomUserAdmin(UserAdmin):
         }),
     )
 
+@admin.register(Book)
+class BookAdmin(admin.ModelAdmin):
+    list_display = ('title', 'author', 'source', 'google_books_id', 'openlibrary_id')
+    search_fields = ('title', 'author')
+    list_filter = ('source',)
+
 admin.site.register(CustomUser, CustomUserAdmin)
-admin.site.register(Book)
 admin.site.register(UserBook)

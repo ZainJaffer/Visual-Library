@@ -6,11 +6,12 @@ import { BookSearch } from '../components/books/BookSearch';
 import { useBooks } from '../hooks/useBooks';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { GoogleBooksTest } from '../components/books/GoogleBooksTest';
 
 function MyBooks() {
   const { user } = useAuth();
   const { books, loading, error, fetchBooks } = useBooks();
+  const [errorState, setErrorState] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     fetchBooks();
@@ -61,7 +62,7 @@ function MyBooks() {
       }
     } catch (err) {
       console.error('Error updating book:', err);
-      setError('Failed to update book status');
+      setErrorState('Failed to update book status');
     }
   };
 
@@ -84,23 +85,20 @@ function MyBooks() {
     };
   }, [books]);
 
-  const handleAddBook = async (bookData) => {
+  const handleAddBook = async (book) => {
+    console.log('MyBooks: Received book data:', book);
     try {
-      // First, add the book to your backend
-      const response = await api.post('/users/books/', {
-        title: bookData.title,
-        author: bookData.author,
-        genre: bookData.genre,
-        description: bookData.description,
-        cover_image_url: bookData.cover_image_url,
-        google_books_id: bookData.google_books_id
-      });
-
-      // Refresh the books list
-      fetchBooks();
-    } catch (err) {
-      console.error('Error adding book:', err);
-      setError('Failed to add book to your library');
+        console.log('MyBooks: Sending POST request to /users/books/add/');
+        await api.post('/users/books/add/', book);
+        console.log('MyBooks: Book added successfully');
+        setSuccessMessage(`"${book.title}" has been added to your library`);
+        fetchBooks();
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+        console.error('MyBooks: Error adding book:', error);
+        setErrorState(error.message);
     }
   };
 
@@ -108,37 +106,49 @@ function MyBooks() {
 
   return (
     <div className="bg-slate-100 min-h-screen">
-      <ErrorDisplay error={error} />
-      <div className="max-w-[1320px] mx-auto px-4 py-16 space-y-12">
-        <GoogleBooksTest />
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Add Books to Your Library</h2>
-          <BookSearch onBookSelect={handleAddBook} />
+        <div className="max-w-[1320px] mx-auto px-4 py-8">
+            <ErrorDisplay error={errorState} />
+            {errorState && (
+                <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    {errorState}
+                </div>
+            )}
+            {successMessage && (
+                <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+                    {successMessage}
+                </div>
+            )}
+
+            <div className="mb-8">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <BookSearch onBookSelect={handleAddBook} />
+                </div>
+            </div>
+            
+            <div className="space-y-8">
+                {bookCategories['Favorites'].length > 0 && (
+                    <BookRow 
+                        title="Favorites"
+                        books={bookCategories['Favorites']}
+                        onToggleStatus={toggleBookStatus}
+                    />
+                )}
+                
+                {Object.entries(bookCategories)
+                    .filter(([key, books]) => 
+                        key !== 'Favorites' && 
+                        books.length > 0
+                    )
+                    .map(([genre, books]) => (
+                        <BookRow 
+                            key={genre}
+                            title={genre}
+                            books={books}
+                            onToggleStatus={toggleBookStatus}
+                        />
+                    ))}
+            </div>
         </div>
-        {/* Favorites (Read) */}
-        {bookCategories['Favorites'].length > 0 && (
-          <BookRow 
-            title="Favorites"
-            books={bookCategories['Favorites']}
-            onToggleStatus={toggleBookStatus}
-          />
-        )}
-        
-        {/* Read Books by Genre */}
-        {Object.entries(bookCategories)
-          .filter(([key, books]) => 
-            key !== 'Favorites' && 
-            books.length > 0
-          )
-          .map(([genre, books]) => (
-            <BookRow 
-              key={genre}
-              title={genre}
-              books={books}
-              onToggleStatus={toggleBookStatus}
-            />
-          ))}
-      </div>
     </div>
   );
 }

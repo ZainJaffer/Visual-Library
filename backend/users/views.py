@@ -342,3 +342,50 @@ def add_book(request):
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_book_to_library(request):
+    try:
+        # Extract book data from request
+        book_data = request.data
+        
+        # Create or get the book
+        book, created = Book.objects.get_or_create(
+            google_books_id=book_data['google_books_id'],
+            defaults={
+                'title': book_data['title'],
+                'author': book_data['author'],
+                'genre': book_data.get('genre', 'Uncategorized'),
+                'description': book_data.get('description', ''),
+                'cover_image_url': book_data.get('cover_image_url'),
+                'source': 'google'
+            }
+        )
+
+        # Create UserBook relationship if it doesn't exist
+        user_book, created = UserBook.objects.get_or_create(
+            user=request.user,
+            book=book,
+            defaults={
+                'is_read': False,
+                'is_favorite': False
+            }
+        )
+
+        if not created:
+            return Response(
+                {'message': 'Book already in your library'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(
+            {'message': 'Book added successfully'},
+            status=status.HTTP_201_CREATED
+        )
+
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
