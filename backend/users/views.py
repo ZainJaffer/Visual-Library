@@ -400,18 +400,22 @@ class UnifiedAddBookView(generics.CreateAPIView):
                         cover_image = self.compress_image(cover_image)
                 book = serializer.save(cover_image=cover_image, source='manual')
 
-            user_book, created = UserBook.objects.get_or_create(
-                user=request.user,
-                book=book,
-                defaults={'is_read': False, 'is_favorite': False}
-            )
-
-            if not created:
+            # Check if user already has this book
+            existing_user_book = UserBook.objects.filter(user=request.user, book=book).first()
+            if existing_user_book:
                 return Response({
                     'status': 'error',
                     'message': 'Book already exists in your library',
                     'book_id': book.id
                 }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create new UserBook with proper read status
+            user_book = UserBook.objects.create(
+                user=request.user,
+                book=book,
+                is_read=request.data.get('is_read', False),
+                is_favorite=False
+            )
 
             return Response({
                 'status': 'success',

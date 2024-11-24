@@ -88,8 +88,14 @@ function MyBooks() {
   const handleAddBook = async (book) => {
     console.log('MyBooks: Received book data:', book);
     try {
-        console.log('MyBooks: Sending POST request to /users/books/add/');
-        await api.post('/users/books/add/', book);
+        // Add is_read flag for books added from search
+        const bookData = {
+            ...book,
+            is_read: true  // Mark the book as read when adding from search
+        };
+        
+        console.log('MyBooks: Sending POST request to /api/users/books/add/');
+        await api.post('/api/users/books/add/', bookData);
         console.log('MyBooks: Book added successfully');
         setSuccessMessage(`"${book.title}" has been added to your library`);
         fetchBooks();
@@ -107,11 +113,13 @@ function MyBooks() {
   return (
     <div className="bg-slate-100 min-h-screen">
         <div className="max-w-[1320px] mx-auto px-4 py-8">
-            <ErrorDisplay error={errorState} />
             {errorState && (
-                <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    {errorState}
-                </div>
+              <ErrorDisplay 
+                error={{ 
+                  message: errorState,
+                  onClose: () => setErrorState(null)
+                }} 
+              />
             )}
             {successMessage && (
                 <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">

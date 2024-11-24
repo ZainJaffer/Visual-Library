@@ -8,7 +8,7 @@ import Register from './pages/Register'
 import MyBooks from './pages/MyBooks'
 import Discover from './pages/Discover'
 import AddBook from './pages/AddBook'
-import TestErrors from './components/TestErrors';
+import TestErrors from './pages/TestErrors';
 import { Toaster } from 'react-hot-toast';
 
 console.log('App.jsx loaded');
@@ -16,69 +16,69 @@ console.log('App.jsx loaded');
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="min-h-screen bg-gray-100">
-          <Navbar /> 
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            
-            {/* Protected routes */}
-            <Route 
-              path="/books/add" 
-              element={
-                <ProtectedRoute>
-                  <AddBook />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/my-books" 
-              element={
-                <ProtectedRoute>
-                  <MyBooks />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/discover" 
-              element={
-                <ProtectedRoute>
-                  <Discover />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Home route */}
-            <Route 
-              path="/" 
-              element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              } 
-            />
+      <div className="App">
+        <Toaster position="top-right" />
+        <Router>
+          <div className="min-h-screen bg-gray-100">
+            <Navbar /> 
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              
+              {/* Protected routes */}
+              <Route 
+                path="/books/add" 
+                element={
+                  <ProtectedRoute>
+                    <AddBook />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/my-books" 
+                element={
+                  <ProtectedRoute>
+                    <MyBooks />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/discover" 
+                element={
+                  <ProtectedRoute>
+                    <Discover />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/test-errors" 
+                element={
+                  <ProtectedRoute>
+                    <TestErrors />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Home route */}
+              <Route 
+                path="/" 
+                element={
+                  <ProtectedRoute>
+                    <Home />
+                  </ProtectedRoute>
+                } 
+              />
 
-            {/* Test errors route */}
-            <Route 
-              path="/test-errors" 
-              element={
-                <ProtectedRoute>
-                  <TestErrors />
-                </ProtectedRoute>
-              } 
-            />
-
-            {/* Catch all route for 404s */}
-            <Route 
-              path="*" 
-              element={<div>Page not found</div>} 
-            />
-          </Routes>
-          <Toaster position="top-right" />
-        </div>
-      </Router>
+              {/* Catch all route for 404s */}
+              <Route 
+                path="*" 
+                element={<div>Page not found</div>} 
+              />
+            </Routes>
+          </div>
+        </Router>
+      </div>
     </AuthProvider>
   )
 }

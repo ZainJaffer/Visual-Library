@@ -5,6 +5,7 @@ import { BookRow } from '../components/books/BookRow';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { useBooks } from '../hooks/useBooks';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { toast } from 'react-hot-toast';
 
 function Discover() {
   const { user } = useAuth();
@@ -46,6 +47,30 @@ function Discover() {
       setError({
         message: err.message || 'An unexpected error occurred'
       });
+    }
+  };
+
+  const addBookToLibrary = async (book) => {
+    try {
+      const bookData = {
+        google_books_id: book.id,
+        title: book.volumeInfo.title,
+        author: book.volumeInfo.authors?.join(', ') || 'Unknown Author',
+        description: book.volumeInfo.description || '',
+        genre: book.volumeInfo.categories?.join(', ') || 'Uncategorized',
+        cover_image_url: book.volumeInfo.imageLinks?.thumbnail || null
+      };
+
+      const response = await api.post('/api/users/books/add/', bookData);
+      
+      if (response.data.status === 'success') {
+        toast.success('Book added to your library!');
+        // Optionally refresh the book list
+        fetchBooks();
+      }
+    } catch (error) {
+      console.error('Error adding book:', error);
+      toast.error(error.message || 'Failed to add book to library');
     }
   };
 
