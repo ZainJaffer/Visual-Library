@@ -71,15 +71,20 @@ function AddBook() {
         console.log(pair[0] + ': ' + pair[1]);
       }
 
-      const response = await api.post('/books/add/', form, {
+      const response = await api.post('/users/books/add/', form, {  // Updated endpoint path to match backend
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
       console.log('Success response:', response.data);
-      toast.success('Book added successfully!');
-      navigate('/');
+      
+      if (response.data.status === 'success') {  // Handle standardized response format
+        toast.success(response.data.message);
+        navigate('/my-books');  // Updated to navigate to my-books instead of home
+      } else {
+        throw new Error(response.data.message || 'Failed to add book');
+      }
     } catch (err) {
       console.error('Error response:', err.response?.data);
       console.error('Error status:', err.response?.status);
@@ -95,160 +100,155 @@ function AddBook() {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-
-    // Log the original file details
-    console.log('Original file:', {
-      name: file.name,
-      type: file.type,
-      size: file.size
-    });
-
-    if (file.size > MAX_FILE_SIZE) {
-      setError(`File size must be less than ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
-      e.target.value = '';
+    
+    if (!file) {
+      setError('');
+      setFormData(prev => ({ ...prev, cover_image_url: null }));
+      setImagePreview(null);
       return;
     }
 
+    // Validate file type
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      setError('File must be a JPEG, PNG, or WebP image');
-      e.target.value = '';
+      setError('Please upload a valid image file (JPEG, PNG, or WebP)');
       return;
     }
 
-    // Use the original filename or generate one with proper extension
-    const filename = file.name || `book_cover_${Date.now()}.${file.type.split('/')[1]}`;
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      setError('File size should not exceed 50MB');
+      return;
+    }
 
-    // Create a new file with the proper filename
-    const newFile = new File([file], filename, {
-      type: file.type
-    });
+    setError('');
+    setFormData(prev => ({ ...prev, cover_image_url: file }));
 
-    // Log the new file details
-    console.log('New file:', {
-      name: newFile.name,
-      type: newFile.type,
-      size: newFile.size
-    });
-
+    // Create image preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
     };
     reader.readAsDataURL(file);
+  };
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      cover_image_url: newFile
+      [name]: value
     }));
-    setError('');
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Add New Book</h1>
-      
-      {error && (
-        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="max-w-md">
-        <div className="mb-4">
-          <label htmlFor="title" className="block text-gray-700 font-medium mb-2">
-            Title
-          </label>
-          <input
-            type="text"
-            id="title"
-            value={formData.title}
-            onChange={(e) => setFormData({...formData, title: e.target.value})}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="author" className="block text-gray-700 font-medium mb-2">
-            Author
-          </label>
-          <input
-            type="text"
-            id="author"
-            value={formData.author}
-            onChange={(e) => setFormData({...formData, author: e.target.value})}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="genre" className="block text-gray-700 font-medium mb-2">
-            Genre
-          </label>
-          <input
-            type="text"
-            id="genre"
-            value={formData.genre}
-            onChange={(e) => setFormData({...formData, genre: e.target.value})}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="description" className="block text-gray-700 font-medium mb-2">
-            Description (Optional)
-          </label>
-          <textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => setFormData({...formData, description: e.target.value})}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows="4"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="cover" className="block text-gray-700 font-medium mb-2">
-            Cover Image (Optional)
-          </label>
-          <input
-            type="file"
-            id="cover"
-            accept={ALLOWED_FILE_TYPES.join(',')}
-            onChange={handleFileChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          {imagePreview && (
-            <div className="mt-2">
-              <img 
-                src={imagePreview} 
-                alt="Preview" 
-                className="w-32 h-48 object-cover rounded"
-              />
+    <div className="min-h-screen bg-slate-100 py-8">
+      <div className="max-w-2xl mx-auto px-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h1 className="text-2xl font-bold mb-6">Add New Book</h1>
+          
+          {error && (
+            <div className="mb-4 p-4 text-red-700 bg-red-100 rounded-lg">
+              {error}
             </div>
           )}
-          <div className="mt-1 text-sm text-gray-500">
-            <p>If no cover is provided, a random cover will be assigned.</p>
-            <p>Maximum file size: 50MB</p>
-            <p>Allowed formats: JPEG, PNG, WebP</p>
-          </div>
-        </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full py-2 px-4 rounded font-medium text-white 
-            ${loading 
-              ? 'bg-blue-400 cursor-not-allowed' 
-              : 'bg-blue-600 hover:bg-blue-700'
-            } transition-colors duration-200`}
-        >
-          {loading ? 'Adding Book...' : 'Add Book'}
-        </button>
-      </form>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Title *
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Author *
+              </label>
+              <input
+                type="text"
+                name="author"
+                value={formData.author}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Genre *
+              </label>
+              <input
+                type="text"
+                name="genre"
+                value={formData.genre}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows="4"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Cover Image
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full"
+              />
+              {imagePreview && (
+                <div className="mt-2">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-32 h-48 object-cover rounded-lg"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-4">
+              <button
+                type="button"
+                onClick={() => navigate('/my-books')}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className={`px-4 py-2 text-white bg-black rounded-lg ${
+                  loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800'
+                }`}
+              >
+                {loading ? 'Adding...' : 'Add Book'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,31 +1,28 @@
 from django.urls import path
 from .views import (
-    UserRegistrationView, 
-    AddBookView, 
-    UpdateBookStatusView,
+    UserRegistrationView,
     EmailTokenObtainPairView,
+    UnifiedAddBookView,
+    UpdateBookStatusView,
+    ListUserBooksView,
     LogoutView,
-    test_protected_route,
-    ListUserBooksView, 
     UpdateBookDetailsView,
     DeleteBookView,
+    test_protected_route,
     get_random_cover,
-    test_errors,
+    test_errors
 )
-from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path('register/', UserRegistrationView.as_view(), name='register'),
-    path('login/', EmailTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('login/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('books/add/', AddBookView.as_view(), name='add-book'),
+    path('token/', EmailTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('test-protected/', test_protected_route, name='test-protected'),
-    path('books/<int:pk>/update-status/', UpdateBookStatusView.as_view(), name='update-book-status'),
+    path('books/add/', UnifiedAddBookView.as_view(), name='add-book'),  # Unified endpoint for both manual and API imports
+    path('books/status/<int:pk>/', UpdateBookStatusView.as_view(), name='update-book-status'),
+    path('books/', ListUserBooksView.as_view(), name='list-user-books'),
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('books/', ListUserBooksView.as_view(), name='list-books'),
-    path('books/<int:pk>/update/', UpdateBookDetailsView.as_view(), name='update-book-details'),
-    path('books/<int:pk>/delete/', DeleteBookView.as_view(), name='delete-book'),
-    path('random-cover/', get_random_cover, name='random-cover'),
+    path('books/<int:pk>/', UpdateBookDetailsView.as_view(), name='update-book-details'),
+    path('books/delete/<int:pk>/', DeleteBookView.as_view(), name='delete-book'),
+    path('books/random-cover/', get_random_cover, name='random-cover'),
     path('test-errors/', test_errors, name='test-errors'),
 ]

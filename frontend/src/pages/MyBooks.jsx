@@ -9,7 +9,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 
 function MyBooks() {
   const { user } = useAuth();
-  const { books, loading, error, fetchBooks } = useBooks();
+  const { books, loading, error, setBooks, fetchBooks } = useBooks();
   const [errorState, setErrorState] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -25,12 +25,12 @@ function MyBooks() {
 
     try {
       if (field === 'is_read' && newValue === true) {
-        await api.put(`/users/books/${bookId}/update-status/`, { 
+        await api.put(`/api/users/books/status/${bookId}/`, { 
           is_read: true,
           is_favorite: false 
         });
       } else {
-        await api.put(`/users/books/${bookId}/update-status/`, { [field]: newValue });
+        await api.put(`/api/users/books/status/${bookId}/`, { [field]: newValue });
       }
       
       if (field === 'is_favorite') {
