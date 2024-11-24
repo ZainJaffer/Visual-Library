@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFit
 
@@ -42,6 +43,8 @@ class Book(models.Model):
     description = models.TextField(blank=True, null=True)
     cover_image = models.ImageField(upload_to='book_covers/', null=True, blank=True)
     cover_image_url = models.URLField(max_length=1000, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
     
     # Source tracking
     SOURCE_CHOICES = [
@@ -68,17 +71,31 @@ class Book(models.Model):
             return self.cover_image.url
         return self.cover_image_url
 
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.created_at = timezone.now()
+        self.updated_at = timezone.now()
+        super().save(*args, **kwargs)
+
 class UserBook(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     is_read = models.BooleanField(default=False)
     is_favorite = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         indexes = [
             models.Index(fields=['user', 'is_read', 'is_favorite']),
             models.Index(fields=['user', 'book']),
         ]
+
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.created_at = timezone.now()
+        self.updated_at = timezone.now()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.user.email} - {self.book.title}"

@@ -118,10 +118,10 @@ class AddBookView(generics.CreateAPIView):
             print(f"Image compression error: {str(e)}")
             return image_file
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
         try:
             # Get the cover image from the request
-            cover_image = self.request.FILES.get('cover_image_url')
+            cover_image = request.FILES.get('cover_image')
             
             if cover_image:
                 # Check file size (50MB limit)
@@ -133,18 +133,24 @@ class AddBookView(generics.CreateAPIView):
                 # Check if image needs compression (over 2MB)
                 if cover_image.size > 2 * 1024 * 1024:
                     compressed_image = self.compress_image(cover_image)
-                    book = serializer.save(cover_image_url=compressed_image)
-                else:
-                    # Small images don't need compression
-                    book = serializer.save(cover_image_url=cover_image)
-            else:
-                book = serializer.save()
-                
-            UserBook.objects.create(user=self.request.user, book=book)
+                    request.FILES['cover_image'] = compressed_image
+
+            # Create the book
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            book = serializer.save()
             
+            # Create UserBook entry
+            UserBook.objects.create(user=request.user, book=book)
+            
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+                
         except Exception as e:
-            print(f"Error in perform_create: {str(e)}")
-            raise
+            print(f"Error in create book: {str(e)}")
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class UpdateBookStatusView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated, IsUserBookOwner]
@@ -343,49 +349,92 @@ def add_book(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def add_book_to_library(request):
-    try:
-        # Extract book data from request
-        book_data = request.data
-        
-        # Create or get the book
-        book, created = Book.objects.get_or_create(
-            google_books_id=book_data['google_books_id'],
-            defaults={
-                'title': book_data['title'],
-                'author': book_data['author'],
-                'genre': book_data.get('genre', 'Uncategorized'),
-                'description': book_data.get('description', ''),
-                'cover_image_url': book_data.get('cover_image_url'),
-                'source': 'google'
-            }
-        )
+class UnifiedAddBookView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = BookSerializer
 
-        # Create UserBook relationship if it doesn't exist
-        user_book, created = UserBook.objects.get_or_create(
-            user=request.user,
-            book=book,
-            defaults={
-                'is_read': False,
-                'is_favorite': False
-            }
-        )
+    def compress_image(self, image_file):
+        try:
+            img = Image.open(image_file)
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            max_size = (800, 800)
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            output = io.BytesIO()
+            img.save(output, format='JPEG', quality=85, optimize=True)
+            output.seek(0)
+            return InMemoryUploadedFile(
+                output, 'ImageField',
+                f"{image_file.name.split('.')[0]}_compressed.jpg",
+                'image/jpeg', output.getbuffer().nbytes, None
+            )
+        except Exception as e:
+            print(f"Image compression error: {str(e)}")
+            return image_file
 
-        if not created:
-            return Response(
-                {'message': 'Book already in your library'},
-                status=status.HTTP_400_BAD_REQUEST
+    def create(self, request, *args, **kwargs):
+        try:
+            is_google_books = bool(request.data.get('google_books_id'))
+            
+            if is_google_books:
+                book_data = request.data
+                book, created = Book.objects.get_or_create(
+                    google_books_id=book_data['google_books_id'],
+                    defaults={
+                        'title': book_data['title'],
+                        'author': book_data['author'],
+                        'genre': book_data.get('genre', 'Uncategorized'),
+                        'description': book_data.get('description', ''),
+                        'cover_image_url': book_data.get('cover_image_url'),
+                        'source': 'google'
+                    }
+                )
+            else:
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                cover_image = request.FILES.get('cover_image')
+                if cover_image:
+                    if cover_image.size > 50 * 1024 * 1024:
+                        raise ValidationError('File size too large. Maximum size is 50MB.')
+                    if cover_image.size > 2 * 1024 * 1024:
+                        cover_image = self.compress_image(cover_image)
+                book = serializer.save(cover_image=cover_image, source='manual')
+
+            user_book, created = UserBook.objects.get_or_create(
+                user=request.user,
+                book=book,
+                defaults={'is_read': False, 'is_favorite': False}
             )
 
-        return Response(
-            {'message': 'Book added successfully'},
-            status=status.HTTP_201_CREATED
-        )
+            if not created:
+                return Response({
+                    'status': 'error',
+                    'message': 'Book already exists in your library',
+                    'book_id': book.id
+                }, status=status.HTTP_400_BAD_REQUEST)
 
-    except Exception as e:
-        return Response(
-            {'error': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+            return Response({
+                'status': 'success',
+                'message': 'Book added successfully',
+                'data': {
+                    'book_id': book.id,
+                    'title': book.title,
+                    'author': book.author,
+                    'genre': book.genre,
+                    'cover_url': book.cover_url,
+                    'source': book.source
+                }
+            }, status=status.HTTP_201_CREATED)
+
+        except ValidationError as e:
+            return Response({
+                'status': 'error',
+                'message': str(e),
+                'errors': e.detail if hasattr(e, 'detail') else None
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': 'An unexpected error occurred',
+                'detail': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
