@@ -39,6 +39,11 @@ function Navbar() {
                 </NavLink>
               </li>
               <li>
+                <NavLink to="/books/add" className={navLinkStyle}>
+                  Add Book
+                </NavLink>
+              </li>
+              <li>
                 <button
                   onClick={logout}
                   className="text-xl font-medium text-gray-600 hover:text-gray-900 transition-colors"

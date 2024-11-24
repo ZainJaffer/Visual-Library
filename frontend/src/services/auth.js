@@ -1,9 +1,9 @@
-import { api } from './api' 
+import api from './api' 
 
 export const authService = {
   register: async (userData) => {
     try {
-      const response = await api.post('/users/register/', userData)
+      const response = await api.post('/api/users/register/', userData)
       return response.data
     } catch (error) {
       throw error.response?.data || error.message
@@ -12,7 +12,7 @@ export const authService = {
 
   login: async (credentials) => {
     try {
-        const response = await api.post('/users/login/', {
+        const response = await api.post('/api/users/token/', {
             email: credentials.email,
             password: credentials.password
         })
@@ -32,7 +32,7 @@ export const authService = {
   testProtectedRoute: async () => {
     try {
         console.log('Token before request:', localStorage.getItem('token'));
-        const response = await api.get('/users/test-protected/');
+        const response = await api.get('/api/users/test-protected/');
         console.log('Response:', response.data);
         return response.data;
     } catch (error) {
@@ -40,4 +40,4 @@ export const authService = {
         throw error.response?.data || error.message;
     }
   }
-} 
+}

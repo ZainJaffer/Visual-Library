@@ -29,7 +29,7 @@ export const BookRow = React.memo(({ title, books, onToggleStatus }) => {
 
   const getRandomCover = async () => {
     try {
-      const response = await api.get('/users/random-cover/');
+      const response = await api.get('/api/users/books/random-cover/');
       return response.data.cover_url;
     } catch (error) {
       console.error('Failed to get random cover:', error);
@@ -220,6 +220,7 @@ export const BookRow = React.memo(({ title, books, onToggleStatus }) => {
                         {book.is_read ? 'Mark Unread' : 'Mark Read'}
                       </button>
                       
+
                       <button 
                         onClick={() => onToggleStatus(book.id, 'is_favorite')}
                         className={`w-9 flex items-center justify-center rounded-lg border ${

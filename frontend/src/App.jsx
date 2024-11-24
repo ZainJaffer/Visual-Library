@@ -7,9 +7,9 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import MyBooks from './pages/MyBooks'
 import Discover from './pages/Discover'
+import AddBook from './pages/AddBook'
 import TestErrors from './components/TestErrors';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { Toaster } from 'react-hot-toast';
 
 console.log('App.jsx loaded');
 
@@ -25,6 +25,14 @@ function App() {
             <Route path="/register" element={<Register />} />
             
             {/* Protected routes */}
+            <Route 
+              path="/books/add" 
+              element={
+                <ProtectedRoute>
+                  <AddBook />
+                </ProtectedRoute>
+              } 
+            />
             <Route 
               path="/my-books" 
               element={
@@ -52,12 +60,6 @@ function App() {
               } 
             />
 
-            {/* Catch all route for 404s */}
-            <Route 
-              path="*" 
-              element={<div>Page not found</div>} 
-            />
-
             {/* Test errors route */}
             <Route 
               path="/test-errors" 
@@ -67,18 +69,14 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+
+            {/* Catch all route for 404s */}
+            <Route 
+              path="*" 
+              element={<div>Page not found</div>} 
+            />
           </Routes>
-          <ToastContainer 
-            position="top-right"
-            autoClose={5000}
-            hideProgressBar={false}
-            newestOnTop={false}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-          />
+          <Toaster position="top-right" />
         </div>
       </Router>
     </AuthProvider>

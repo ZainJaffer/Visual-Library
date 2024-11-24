@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { api } from '../services/api';
+import { useState } from 'react';
+import api from '../services/api';  
 
 export const useBooks = () => {
     const [books, setBooks] = useState([]);
@@ -9,7 +9,7 @@ export const useBooks = () => {
     const fetchBooks = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/users/books/');
+            const response = await api.get('/api/users/books/');
             setBooks(response.data);
             setError(null);
         } catch (error) {
@@ -27,6 +27,7 @@ export const useBooks = () => {
         loading,
         error,
         setError,
-        fetchBooks
+        fetchBooks,
+        setBooks  
     };
 };
