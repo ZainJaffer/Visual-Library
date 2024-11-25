@@ -7,7 +7,6 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import MyBooks from './pages/MyBooks'
-import Discover from './pages/Discover'
 import AddBook from './pages/AddBook'
 import TestErrors from './pages/TestErrors';
 import { Toaster } from 'react-hot-toast';
@@ -41,14 +40,6 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <MyBooks />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/discover" 
-                element={
-                  <ProtectedRoute>
-                    <Discover />
                   </ProtectedRoute>
                 } 
               />
