@@ -512,7 +512,7 @@ class UnifiedAddBookView(generics.CreateAPIView):
                 'detail': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@api_view(['PUT'])
+@api_view(['PUT', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def update_book(request, book_id):
     try:
@@ -522,43 +522,52 @@ def update_book(request, book_id):
         user_book = UserBook.objects.get(id=book_id, user=request.user)
         book = user_book.book
         
+        # Create a mutable copy of the request data
+        data = request.data.copy()
+        
         # Update book details
-        if 'title' in request.data:
-            book.title = request.data['title']
-        if 'author' in request.data:
-            book.author = request.data['author']
-        if 'description' in request.data:
-            book.description = request.data['description']
-        if 'genre' in request.data:
-            book.genre = request.data['genre']
+        if 'title' in data:
+            book.title = data['title']
+        if 'author' in data:
+            book.author = data['author']
+        if 'description' in data:
+            book.description = data['description']
+        if 'genre' in data:
+            book.genre = data['genre']
 
         # Handle cover image
         if 'cover_image' in request.FILES:
             print("Processing cover image file")  # Debug log
             book.cover_image = request.FILES['cover_image']
             book.cover_image_url = None  # Clear the URL if we're using a file
-        elif 'cover_image_url' in request.data and request.data['cover_image_url']:
-            print("Processing cover image URL")  # Debug log
-            book.cover_image_url = request.data['cover_image_url']
-            book.cover_image = None  # Clear the file if we're using a URL
+        elif 'cover_image_url' in data:
+            print("Processing cover image URL:", data['cover_image_url'])  # Debug log
+            if data['cover_image_url'].strip():
+                book.cover_image_url = data['cover_image_url']
+                book.cover_image = None  # Clear the file if we're using a URL
+            else:
+                # If URL is empty, clear both
+                book.cover_image_url = None
+                book.cover_image = None
         
         book.save()
+        print("Book saved successfully")  # Debug log
         
-        # Return the updated book data
-        serialized_data = UserBookSerializer(user_book).data
-        print("Returning data:", serialized_data)  # Debug log
+        # Return the updated book data directly
+        serialized_data = BookSerializer(book).data
+        print("Returning serialized data:", serialized_data)  # Debug log
         
-        return Response({
-            'status': 'success',
-            'data': serialized_data
-        })
+        return Response(serialized_data)
+        
     except UserBook.DoesNotExist:
+        print("Book not found error")  # Debug log
         return Response({
             'status': 'error',
             'message': 'Book not found'
         }, status=404)
     except Exception as e:
         print("Error updating book:", str(e))  # Debug log
+        print("Error type:", type(e))  # Debug log
         return Response({
             'status': 'error',
             'message': str(e)

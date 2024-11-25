@@ -7,10 +7,11 @@ export const EditBookDetails = ({ book, onClose, onUpdate }) => {
   console.log('Initial book data:', book); // Debug log
 
   const [formState, setFormState] = useState({
-    title: book?.book?.title || '',
-    author: book?.book?.author || '',
-    genre: book?.book?.genre || '',
-    description: book?.book?.description || '',
+    title: '',
+    author: '',
+    genre: '',
+    description: '',
+    cover_image_url: ''
   });
 
   const [error, setError] = useState('');
@@ -18,26 +19,41 @@ export const EditBookDetails = ({ book, onClose, onUpdate }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
 
-  const getImageUrl = (book) => {
-    if (!book?.book) return '/placeholder-cover.svg';
+  useEffect(() => {
+    // Initialize form state from book data
+    setFormState({
+      title: book.book.title || '',
+      author: book.book.author || '',
+      genre: book.book.genre || '',
+      description: book.book.description || '',
+      cover_image_url: book.book.cover_image_url || ''
+    });
     
-    // Case 1: Book has a cover_image_url that's a full URL
+    // Set initial preview URL
+    setPreviewUrl(getImageUrl(book));
+  }, [book]);
+
+  const getImageUrl = (book) => {
+    if (!book?.book?.cover_image_url && !book?.book?.cover_image) return '/placeholder-cover.svg';
+    
+    // Case 1: Full URL (e.g., from Google Books or Django media)
     if (book.book.cover_image_url?.startsWith('http')) {
       return book.book.cover_image_url;
     }
-    
-    // Case 2: Book has a cover_image_url that's a local path
-    if (book.book.cover_image_url) {
-      return `${API_BASE_URL}/media/${book.book.cover_image_url}`;
+
+    // Case 2: Cover image from file upload
+    if (book.book.cover_image?.startsWith('http')) {
+      return book.book.cover_image;
     }
     
-    // Case 3: No image
+    // Case 3: Local path (either cover_image or cover_image_url)
+    const imagePath = book.book.cover_image || book.book.cover_image_url;
+    if (imagePath) {
+      return `${API_BASE_URL}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+    }
+    
     return '/placeholder-cover.svg';
   };
-
-  useEffect(() => {
-    setPreviewUrl(getImageUrl(book));
-  }, [book]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -53,11 +69,24 @@ export const EditBookDetails = ({ book, onClose, onUpdate }) => {
       setSelectedFile(file);
       const fileUrl = URL.createObjectURL(file);
       setPreviewUrl(fileUrl);
+      // Clear the cover_image_url in the form state
       setFormState(prev => ({
         ...prev,
-        cover_image_url: ''
+        cover_image_url: null
       }));
     }
+  };
+
+  const handleImageUrlChange = (e) => {
+    const url = e.target.value;
+    // Clear the file selection when entering a URL
+    setSelectedFile(null);
+    setFormState(prev => ({
+      ...prev,
+      cover_image_url: url
+    }));
+    // Update preview with the new URL
+    setPreviewUrl(url || '/placeholder-cover.svg');
   };
 
   const handleSubmit = async (e) => {
@@ -65,17 +94,27 @@ export const EditBookDetails = ({ book, onClose, onUpdate }) => {
     setIsSubmitting(true);
     setError('');
 
-    const formData = new FormData();
-    formData.append('title', formState.title);
-    formData.append('author', formState.author);
-    formData.append('genre', formState.genre);
-    formData.append('description', formState.description);
-    
-    if (selectedFile) {
-      formData.append('cover_image', selectedFile);
-    }
-
     try {
+      const formData = new FormData();
+      formData.append('title', formState.title.trim());
+      formData.append('author', formState.author.trim());
+      formData.append('genre', formState.genre.trim());
+      formData.append('description', formState.description.trim());
+      
+      // Only append one of either file or URL, not both
+      if (selectedFile) {
+        formData.append('cover_image', selectedFile);
+        formData.append('cover_image_url', ''); // Clear URL when uploading file
+      } else if (formState.cover_image_url) {
+        formData.append('cover_image_url', formState.cover_image_url);
+        // No need to explicitly clear cover_image as it's handled by the backend
+      }
+
+      console.log('Submitting form data:');
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+
       const response = await axios.patch(
         `${API_BASE_URL}/api/users/books/${book.book.id}/`,
         formData,
@@ -87,19 +126,20 @@ export const EditBookDetails = ({ book, onClose, onUpdate }) => {
         }
       );
 
+      console.log('Server response:', response.data);
+
+      // Update the book data with the response
       const updatedBook = {
         ...book,
-        book: {
-          ...book.book,
-          ...response.data,
-        }
+        book: response.data
       };
 
       onUpdate(updatedBook);
       onClose();
     } catch (error) {
       console.error('Error updating book:', error);
-      setError(error.response?.data?.detail || 'Failed to update book. Please try again.');
+      console.error('Error details:', error.response?.data);
+      setError(error.response?.data?.message || error.message || 'Failed to update book. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -161,16 +201,9 @@ export const EditBookDetails = ({ book, onClose, onUpdate }) => {
                     </label>
                     <input
                       type="text"
-                      value={formState.cover_image_url}
-                      onChange={(e) => {
-                        const url = e.target.value;
-                        setFormState(prev => ({
-                          ...prev,
-                          cover_image_url: url
-                        }));
-                        setPreviewUrl(url ? `http://localhost:8000${url}` : '/placeholder-cover.svg');
-                        setSelectedFile(null);
-                      }}
+                      name="cover_image_url"
+                      value={formState.cover_image_url || ''}
+                      onChange={handleImageUrlChange}
                       placeholder="Enter image URL"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     />

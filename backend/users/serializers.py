@@ -19,7 +19,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 class BookSerializer(serializers.ModelSerializer):
     cover_image_url = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    cover_image = serializers.ImageField(required=False, allow_null=True, write_only=True)
+    cover_image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Book
@@ -32,38 +32,51 @@ class BookSerializer(serializers.ModelSerializer):
             'source': {'required': False, 'default': 'manual'},
         }
 
+    def to_representation(self, instance):
+        # Get the base representation
+        ret = super().to_representation(instance)
+        
+        # Handle cover_image field (file upload)
+        if instance.cover_image and hasattr(instance.cover_image, 'url'):
+            ret['cover_image'] = instance.cover_image.url
+        else:
+            ret['cover_image'] = None
+            
+        # Handle cover_image_url field (external URL or local path)
+        if instance.cover_image_url:
+            # If it's already a full URL, keep it as is
+            if instance.cover_image_url.startswith('http'):
+                ret['cover_image_url'] = instance.cover_image_url
+            else:
+                # For local paths, make sure they start with /media/
+                path = instance.cover_image_url
+                if not path.startswith('/media/'):
+                    path = f'/media/{path}'
+                ret['cover_image_url'] = path
+        else:
+            ret['cover_image_url'] = None
+            
+        return ret
+
     def update(self, instance, validated_data):
-        # Handle cover_image separately
+        # Handle cover_image and cover_image_url separately
         cover_image = validated_data.pop('cover_image', None)
+        cover_image_url = validated_data.pop('cover_image_url', None)
         
         # Update other fields first
         for attr, value in validated_data.items():
-            if value is not None:  # Only update if value is provided
-                setattr(instance, attr, value)
+            setattr(instance, attr, value)
         
-        # Handle image update if provided
-        if cover_image:
-            # Save the new image
+        # Handle image fields
+        if cover_image is not None:
             instance.cover_image = cover_image
-            instance.save()
-            
-            # Update cover_image_url to the new image's URL
-            instance.cover_image_url = instance.cover_image.name  # Use name instead of url
-            instance.save()
+            instance.cover_image_url = None
+        elif cover_image_url is not None:
+            instance.cover_image_url = cover_image_url
+            instance.cover_image = None
         
+        instance.save()
         return instance
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        
-        # For uploaded images, return the relative path
-        if instance.cover_image and instance.cover_image.name:
-            data['cover_image_url'] = instance.cover_image.name
-        # For external URLs (like Google Books), return the full URL
-        elif instance.cover_image_url and instance.cover_image_url.startswith('http'):
-            data['cover_image_url'] = instance.cover_image_url
-            
-        return data
 
 class UserBookSerializer(serializers.ModelSerializer):
     book = BookSerializer(read_only=True)

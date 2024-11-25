@@ -5,8 +5,8 @@ import api from '../../services/api';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
-import { HeartIcon as HeartIconOutline } from '@heroicons/react/24/outline';
-import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
+import { StarIcon as StarIconOutline } from '@heroicons/react/24/outline';
+import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { EditBookDetails } from './EditBookDetails';
 
 // Helper functions for text formatting
@@ -36,15 +36,25 @@ const formatTitle = (title) => {
 const API_BASE_URL = 'http://localhost:8000';
 
 const getImageUrl = (book) => {
-  if (!book?.cover_image_url) return '/placeholder-cover.svg';
+  if (!book?.cover_image_url && !book?.cover_image) return '/placeholder-cover.svg';
   
-  // Case 1: Full URL (e.g., from Google Books)
-  if (book.cover_image_url.startsWith('http')) {
+  // Case 1: Full URL (e.g., from Google Books or Django media)
+  if (book.cover_image_url?.startsWith('http')) {
     return book.cover_image_url;
   }
+
+  // Case 2: Cover image from file upload
+  if (book.cover_image?.startsWith('http')) {
+    return book.cover_image;
+  }
   
-  // Case 2: Local path
-  return `${API_BASE_URL}/media/${book.cover_image_url}`;
+  // Case 3: Local path (either cover_image or cover_image_url)
+  const imagePath = book.cover_image || book.cover_image_url;
+  if (imagePath) {
+    return `${API_BASE_URL}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+  }
+  
+  return '/placeholder-cover.svg';
 };
 
 export const BookRow = React.memo(({ title, books, onToggleStatus, onDeleteBook, onUpdateBook }) => {
@@ -310,15 +320,14 @@ export const BookRow = React.memo(({ title, books, onToggleStatus, onDeleteBook,
                     {/* Favorite Button */}
                     <button
                       onClick={() => onToggleStatus(book.id, 'is_favorite')}
-                      className={`absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                        book.is_favorite
-                          ? book.is_read 
-                            ? 'bg-red-500 text-white'
-                            : 'bg-blue-500 text-white'
-                          : 'bg-white/80 hover:bg-white text-gray-600'
-                      }`}
+                      className="absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center transition-all bg-white/80 hover:bg-white"
+                      aria-label={book.is_favorite ? "Remove from favorites" : "Add to favorites"}
                     >
-                      <span className="text-lg">{book.is_favorite ? '★' : '☆'}</span>
+                      {book.is_favorite ? (
+                        <StarIconSolid className="h-5 w-5 text-red-500" />
+                      ) : (
+                        <StarIconOutline className="h-5 w-5 text-gray-600" />
+                      )}
                     </button>
                   </div>
 
