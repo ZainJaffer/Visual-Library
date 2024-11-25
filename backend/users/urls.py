@@ -11,7 +11,8 @@ from .views import (
     test_protected_route,
     get_random_cover,
     test_errors,
-    DeleteUserBookView
+    DeleteUserBookView,
+    update_book
 )
 
 urlpatterns = [

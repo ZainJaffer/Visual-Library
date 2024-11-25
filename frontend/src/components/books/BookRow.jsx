@@ -5,6 +5,9 @@ import api from '../../services/api';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartIconOutline } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
+import { EditBookDetails } from './EditBookDetails';
 
 // Helper functions for text formatting
 const formatAuthors = (authorString) => {
@@ -30,12 +33,27 @@ const formatTitle = (title) => {
   return title.length > MAX_LENGTH ? title.substring(0, MAX_LENGTH) + '...' : title;
 };
 
-export const BookRow = React.memo(({ title, books, onToggleStatus, onDeleteBook }) => {
-  const [coverUrls, setCoverUrls] = useState({});
+const API_BASE_URL = 'http://localhost:8000';
+
+const getImageUrl = (book) => {
+  if (!book?.cover_image_url) return '/placeholder-cover.svg';
+  
+  // Case 1: Full URL (e.g., from Google Books)
+  if (book.cover_image_url.startsWith('http')) {
+    return book.cover_image_url;
+  }
+  
+  // Case 2: Local path
+  return `${API_BASE_URL}/media/${book.cover_image_url}`;
+};
+
+export const BookRow = React.memo(({ title, books, onToggleStatus, onDeleteBook, onUpdateBook }) => {
   const [showLeftScroll, setShowLeftScroll] = useState(false);
   const [showRightScroll, setShowRightScroll] = useState(false);
   const [scrollInterval, setScrollInterval] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editingBook, setEditingBook] = useState(null);
+  const scrollContainerRef = useRef(null);
 
   // Get section description
   const getSectionDescription = (title) => {
@@ -50,30 +68,6 @@ export const BookRow = React.memo(({ title, books, onToggleStatus, onDeleteBook 
         return '';
     }
   };
-
-  const getRandomCover = async () => {
-    try {
-      const response = await api.get('/api/users/books/random-cover/');
-      return response.data.cover_url;
-    } catch (error) {
-      console.error('Failed to get random cover:', error);
-      return null;
-    }
-  };
-
-  useEffect(() => {
-    const fetchCovers = async () => {
-      const newCoverUrls = {};
-      for (const book of books) {
-        if (!book.book.cover_image_url) {
-          newCoverUrls[book.id] = await getRandomCover();
-        }
-      }
-      setCoverUrls(newCoverUrls);
-    };
-    
-    fetchCovers();
-  }, [books]);
 
   const handleScroll = (e) => {
     const container = e.target;
@@ -171,6 +165,10 @@ export const BookRow = React.memo(({ title, books, onToggleStatus, onDeleteBook 
     }
   };
 
+  const handleBookUpdate = (updatedBook) => {
+    onUpdateBook(updatedBook);
+  };
+
   return (
     <div className={`mb-8 px-4 ${title === 'Currently Reading' ? 'bg-blue-50 rounded-xl' : ''}`}>
       <div className={`${title === 'Currently Reading' ? 'pt-6' : ''} mb-6`}>
@@ -227,20 +225,14 @@ export const BookRow = React.memo(({ title, books, onToggleStatus, onDeleteBook 
                 >
                   <div className="relative aspect-[2/3] overflow-hidden border border-gray-100">
                     <LazyLoadImage 
-                      src={book.book.cover_image_url 
-                        ? `http://localhost:8000/media/${book.book.cover_image_url}`
-                        : `http://localhost:8000/media/${coverUrls[book.id] || ''}`
-                      }
+                      src={getImageUrl(book.book)}
                       alt={book.book.title}
                       effect="blur"
                       className="w-full h-full object-cover"
                       wrapperClassName="w-full h-full"
-                      onError={async (e) => {
-                        e.target.onerror = null;
-                        const randomCover = await getRandomCover();
-                        if (randomCover) {
-                          e.target.src = `http://localhost:8000/media/${randomCover}`;
-                        }
+                      onError={(e) => {
+                        console.error('Image load error:', e.target.src);
+                        e.target.src = '/placeholder-cover.svg';
                       }}
                     />
                     
@@ -303,7 +295,7 @@ export const BookRow = React.memo(({ title, books, onToggleStatus, onDeleteBook 
                               <Menu.Item>
                                 {({ active }) => (
                                   <button
-                                    onClick={() => {}}
+                                    onClick={() => setEditingBook(book)}
                                     className={`${
                                       active ? 'bg-gray-100' : ''
                                     } group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900`}
@@ -376,6 +368,16 @@ export const BookRow = React.memo(({ title, books, onToggleStatus, onDeleteBook 
           </div>
         </div>
       </div>
+      {editingBook && (
+        <EditBookDetails
+          book={editingBook}
+          onClose={() => setEditingBook(null)}
+          onUpdate={(updatedBook) => {
+            handleBookUpdate(updatedBook);
+            setEditingBook(null);
+          }}
+        />
+      )}
     </div>
   );
 });

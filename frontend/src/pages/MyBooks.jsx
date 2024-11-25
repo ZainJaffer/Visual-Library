@@ -122,6 +122,16 @@ function MyBooks() {
     }
   };
 
+  const handleUpdateBook = (updatedBook) => {
+    setBooks(prevBooks => 
+      prevBooks.map(book => 
+        book.id === updatedBook.id ? updatedBook : book
+      )
+    );
+    setSuccessMessage('Book updated successfully');
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
   // Group books into categories
   const bookCategories = useMemo(() => {
     // Get unique genres from all books, not just read ones
@@ -191,6 +201,7 @@ function MyBooks() {
                         books={bookCategories['Currently Reading']}
                         onToggleStatus={toggleBookStatus}
                         onDeleteBook={handleDeleteBook}
+                        onUpdateBook={handleUpdateBook}
                     />
                 )}
 
@@ -200,6 +211,7 @@ function MyBooks() {
                         books={bookCategories['Recently Added']}
                         onToggleStatus={toggleBookStatus}
                         onDeleteBook={handleDeleteBook}
+                        onUpdateBook={handleUpdateBook}
                     />
                 )}
                 
@@ -209,6 +221,7 @@ function MyBooks() {
                         books={bookCategories['Favorites']}
                         onToggleStatus={toggleBookStatus}
                         onDeleteBook={handleDeleteBook}
+                        onUpdateBook={handleUpdateBook}
                     />
                 )}
                 
@@ -224,6 +237,7 @@ function MyBooks() {
                             books={books}
                             onToggleStatus={toggleBookStatus}
                             onDeleteBook={handleDeleteBook}
+                            onUpdateBook={handleUpdateBook}
                         />
                     ))}
             </div>

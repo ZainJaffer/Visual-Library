@@ -494,3 +494,55 @@ class UnifiedAddBookView(generics.CreateAPIView):
                 'message': 'An unexpected error occurred',
                 'detail': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_book(request, book_id):
+    try:
+        print("Received data:", request.data)  # Debug log
+        print("Files:", request.FILES)  # Debug log
+        
+        user_book = UserBook.objects.get(id=book_id, user=request.user)
+        book = user_book.book
+        
+        # Update book details
+        if 'title' in request.data:
+            book.title = request.data['title']
+        if 'author' in request.data:
+            book.author = request.data['author']
+        if 'description' in request.data:
+            book.description = request.data['description']
+        if 'genre' in request.data:
+            book.genre = request.data['genre']
+
+        # Handle cover image
+        if 'cover_image' in request.FILES:
+            print("Processing cover image file")  # Debug log
+            book.cover_image = request.FILES['cover_image']
+            book.cover_image_url = None  # Clear the URL if we're using a file
+        elif 'cover_image_url' in request.data and request.data['cover_image_url']:
+            print("Processing cover image URL")  # Debug log
+            book.cover_image_url = request.data['cover_image_url']
+            book.cover_image = None  # Clear the file if we're using a URL
+        
+        book.save()
+        
+        # Return the updated book data
+        serialized_data = UserBookSerializer(user_book).data
+        print("Returning data:", serialized_data)  # Debug log
+        
+        return Response({
+            'status': 'success',
+            'data': serialized_data
+        })
+    except UserBook.DoesNotExist:
+        return Response({
+            'status': 'error',
+            'message': 'Book not found'
+        }, status=404)
+    except Exception as e:
+        print("Error updating book:", str(e))  # Debug log
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
