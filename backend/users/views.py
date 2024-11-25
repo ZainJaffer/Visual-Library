@@ -210,13 +210,29 @@ class UpdateBookDetailsView(generics.UpdateAPIView):
         return Book.objects.filter(userbook__user=self.request.user)
 
     def get(self, request, *args, **kwargs):
-        # Add GET method to show current data
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        # Create a mutable copy of the request data
+        data = request.data.copy()
+        
+        # Handle file upload
+        if 'cover_image' in request.FILES:
+            data['cover_image'] = request.FILES['cover_image']
+            data['cover_image_url'] = None
+        
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data)
+
     def partial_update(self, request, *args, **kwargs):
-        # Enable PATCH for partial updates
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
@@ -542,8 +558,81 @@ def update_book(request, book_id):
             book.cover_image_url = None  # Clear the URL if we're using a file
         elif 'cover_image_url' in data:
             print("Processing cover image URL:", data['cover_image_url'])  # Debug log
-            if data['cover_image_url'].strip():
-                book.cover_image_url = data['cover_image_url']
+            cover_image_url = data['cover_image_url'].strip()
+            if cover_image_url:
+                # If it's a base64 image or full URL, store it directly
+                if cover_image_url.startswith(('data:image', 'http')):
+                    book.cover_image_url = cover_image_url
+                else:
+                    # For local paths, ensure proper format
+                    book.cover_image_url = cover_image_url.replace('/media/', '')
+                book.cover_image = None  # Clear the file if we're using a URL
+            else:
+                # If URL is empty, clear both
+                book.cover_image_url = None
+                book.cover_image = None
+        
+        book.save()
+        print("Book saved successfully")  # Debug log
+        
+        # Return the updated book data directly
+        serialized_data = BookSerializer(book).data
+        print("Returning serialized data:", serialized_data)  # Debug log
+        
+        return Response(serialized_data)
+        
+    except UserBook.DoesNotExist:
+        print("Book not found error")  # Debug log
+        return Response({
+            'status': 'error',
+            'message': 'Book not found'
+        }, status=404)
+    except Exception as e:
+        print("Error updating book:", str(e))  # Debug log
+        print("Error type:", type(e))  # Debug log
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def update_book(request, book_id):
+    try:
+        print("Received data:", request.data)  # Debug log
+        print("Files:", request.FILES)  # Debug log
+        
+        user_book = UserBook.objects.get(id=book_id, user=request.user)
+        book = user_book.book
+        
+        # Create a mutable copy of the request data
+        data = request.data.copy()
+        
+        # Update book details
+        if 'title' in data:
+            book.title = data['title']
+        if 'author' in data:
+            book.author = data['author']
+        if 'description' in data:
+            book.description = data['description']
+        if 'genre' in data:
+            book.genre = data['genre']
+
+        # Handle cover image
+        if 'cover_image' in request.FILES:
+            print("Processing cover image file")  # Debug log
+            book.cover_image = request.FILES['cover_image']
+            book.cover_image_url = None  # Clear the URL if we're using a file
+        elif 'cover_image_url' in data:
+            print("Processing cover image URL:", data['cover_image_url'])  # Debug log
+            cover_image_url = data['cover_image_url'].strip()
+            if cover_image_url:
+                # If it's a base64 image or full URL, store it directly
+                if cover_image_url.startswith(('data:image', 'http')):
+                    book.cover_image_url = cover_image_url
+                else:
+                    # For local paths, ensure proper format
+                    book.cover_image_url = cover_image_url.replace('/media/', '')
                 book.cover_image = None  # Clear the file if we're using a URL
             else:
                 # If URL is empty, clear both

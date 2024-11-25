@@ -33,7 +33,6 @@ class BookSerializer(serializers.ModelSerializer):
         }
 
     def to_representation(self, instance):
-        # Get the base representation
         ret = super().to_representation(instance)
         
         # Handle cover_image field (file upload)
@@ -42,13 +41,13 @@ class BookSerializer(serializers.ModelSerializer):
         else:
             ret['cover_image'] = None
             
-        # Handle cover_image_url field (external URL or local path)
+        # Handle cover_image_url field (external URL, base64, or local path)
         if instance.cover_image_url:
-            # If it's already a full URL, keep it as is
-            if instance.cover_image_url.startswith('http'):
+            # If it's a base64 image or full URL, keep it as is
+            if instance.cover_image_url.startswith(('data:image', 'http')):
                 ret['cover_image_url'] = instance.cover_image_url
             else:
-                # For local paths, make sure they start with /media/
+                # For local paths, ensure proper format
                 path = instance.cover_image_url
                 if not path.startswith('/media/'):
                     path = f'/media/{path}'
@@ -72,7 +71,12 @@ class BookSerializer(serializers.ModelSerializer):
             instance.cover_image = cover_image
             instance.cover_image_url = None
         elif cover_image_url is not None:
-            instance.cover_image_url = cover_image_url
+            # If it's a base64 image or URL, store it directly
+            if cover_image_url.startswith(('data:image', 'http')):
+                instance.cover_image_url = cover_image_url
+            else:
+                # For local paths, ensure proper format
+                instance.cover_image_url = cover_image_url.replace('/media/', '')
             instance.cover_image = None
         
         instance.save()

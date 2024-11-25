@@ -8,6 +8,7 @@ import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconOutline } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { EditBookDetails } from './EditBookDetails';
+import { ImageAnalyzer } from './ImageAnalyzer';
 
 // Helper functions for text formatting
 const formatAuthors = (authorString) => {
@@ -38,20 +39,27 @@ const API_BASE_URL = 'http://localhost:8000';
 const getImageUrl = (book) => {
   if (!book?.cover_image_url && !book?.cover_image) return '/placeholder-cover.svg';
   
-  // Case 1: Full URL (e.g., from Google Books or Django media)
+  // Case 1: Base64 image
+  if (book.cover_image_url?.startsWith('data:image')) {
+    return book.cover_image_url;
+  }
+
+  // Case 2: Full URL (e.g., from Google Books or Django media)
   if (book.cover_image_url?.startsWith('http')) {
     return book.cover_image_url;
   }
 
-  // Case 2: Cover image from file upload
+  // Case 3: Cover image from file upload
   if (book.cover_image?.startsWith('http')) {
     return book.cover_image;
   }
   
-  // Case 3: Local path (either cover_image or cover_image_url)
+  // Case 4: Local path (either cover_image or cover_image_url)
   const imagePath = book.cover_image || book.cover_image_url;
   if (imagePath) {
-    return `${API_BASE_URL}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+    // Handle paths that might or might not start with /media/
+    const cleanPath = imagePath.replace(/^\/media\//, '');
+    return `${API_BASE_URL}/media/${cleanPath}`;
   }
   
   return '/placeholder-cover.svg';
@@ -229,6 +237,7 @@ export const BookRow = React.memo(({ title, books, onToggleStatus, onDeleteBook,
                         e.target.src = '/placeholder-cover.svg';
                       }}
                     />
+                    <ImageAnalyzer imageUrl={getImageUrl(book.book)} />
                     
                     {/* Three Dot Menu */}
                     <div className="absolute top-2 right-2">

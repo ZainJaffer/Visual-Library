@@ -12,7 +12,7 @@ const googleBooksApi = axios.create({
 const cache = new Map();
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
-export const searchBooks = async (query, maxResults = 10) => {
+const searchBooks = async (query, maxResults = 10) => {
     const cacheKey = `search:${query}:${maxResults}`;
     
     // Check cache first
@@ -39,7 +39,7 @@ export const searchBooks = async (query, maxResults = 10) => {
             author: item.volumeInfo.authors ? item.volumeInfo.authors.join(', ') : 'Unknown',
             genre: item.volumeInfo.categories ? item.volumeInfo.categories.join(', ') : 'Uncategorized',
             description: item.volumeInfo.description || '',
-            cover_image_url: item.volumeInfo.imageLinks?.thumbnail?.replace('http:', 'https:') || null,
+            cover_image_url: getBestImageUrl(item.volumeInfo.imageLinks) || null,
             google_books_id: item.id,
             published_date: item.volumeInfo.publishedDate,
             page_count: item.volumeInfo.pageCount,
@@ -59,3 +59,36 @@ export const searchBooks = async (query, maxResults = 10) => {
         throw new Error('Failed to fetch books from Google Books API');
     }
 };
+
+const getBestImageUrl = (imageLinks) => {
+    if (!imageLinks) return null;
+    
+    // Get the thumbnail URL as base
+    const baseUrl = imageLinks.thumbnail;
+    if (!baseUrl) return null;
+
+    // Create URL object to manipulate parameters
+    try {
+        const url = new URL(baseUrl);
+        
+        // Remove existing parameters we want to customize
+        url.searchParams.delete('zoom');
+        url.searchParams.delete('edge');
+        
+        // Add parameters for moderate quality
+        url.searchParams.set('zoom', '1'); // Standard zoom level
+        url.searchParams.set('w', '400'); // Moderate width
+        url.searchParams.set('h', '600'); // Moderate height
+        
+        // Ensure HTTPS
+        url.protocol = 'https:';
+        
+        console.log('Enhanced image URL:', url.toString());
+        return url.toString();
+    } catch (error) {
+        console.error('Error processing image URL:', error);
+        return baseUrl.replace('http:', 'https:');
+    }
+};
+
+export { searchBooks, getBestImageUrl };

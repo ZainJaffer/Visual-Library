@@ -40,7 +40,7 @@ class Book(models.Model):
     genre = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     cover_image = models.ImageField(upload_to='book_covers/', null=True, blank=True)
-    cover_image_url = models.URLField(max_length=1000, null=True, blank=True)
+    cover_image_url = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(default=timezone.now)
     

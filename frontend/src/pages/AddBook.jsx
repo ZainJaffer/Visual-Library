@@ -15,7 +15,8 @@ function AddBook() {
     author: '',
     description: '',
     genre: '',
-    cover_image_url: null
+    cover_image_url: null,
+    image_url: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,7 +56,8 @@ function AddBook() {
       form.append('genre', formData.genre.trim());
       form.append('description', formData.description.trim());
       
-      if (formData.cover_image_url) {
+      // Handle file upload
+      if (formData.cover_image_url instanceof File) {
         const compressedImage = await compressImage(formData.cover_image_url);
         const extension = compressedImage.type.split('/')[1];
         const finalImage = new File(
@@ -63,12 +65,11 @@ function AddBook() {
           `book_cover.${extension}`,
           { type: compressedImage.type }
         );
-        form.append('cover_image_url', finalImage);
+        form.append('cover_image', finalImage);
       }
-
-      // Log form data for debugging
-      for (let pair of form.entries()) {
-        console.log(pair[0] + ': ' + pair[1]);
+      // Handle URL input
+      else if (formData.image_url) {
+        form.append('cover_image_url', formData.image_url);
       }
 
       const response = await api.post('/api/users/books/add/', form, {
@@ -79,9 +80,9 @@ function AddBook() {
 
       console.log('Success response:', response.data);
       
-      if (response.data.status === 'success') {  // Handle standardized response format
+      if (response.data.status === 'success') {
         toast.success(response.data.message);
-        navigate('/my-books');  // Updated to navigate to my-books instead of home
+        navigate('/my-books');
       } else {
         throw new Error(response.data.message || 'Failed to add book');
       }
@@ -121,7 +122,12 @@ function AddBook() {
     }
 
     setError('');
-    setFormData(prev => ({ ...prev, cover_image_url: file }));
+    // Clear the image URL when uploading a file
+    setFormData(prev => ({ 
+      ...prev, 
+      cover_image_url: file,
+      image_url: '' 
+    }));
 
     // Create image preview
     const reader = new FileReader();
@@ -129,6 +135,17 @@ function AddBook() {
       setImagePreview(reader.result);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleImageUrlChange = (e) => {
+    const url = e.target.value;
+    // Clear file upload when entering URL
+    setFormData(prev => ({
+      ...prev,
+      image_url: url,
+      cover_image_url: null
+    }));
+    setImagePreview(url);
   };
 
   const handleChange = (e) => {
@@ -211,21 +228,62 @@ function AddBook() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Cover Image
               </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="w-full"
-              />
-              {imagePreview && (
-                <div className="mt-2">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-32 h-48 object-cover rounded-lg"
+              <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Upload Image File</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-lg file:border-0
+                      file:text-sm file:font-medium
+                      file:bg-black file:text-white
+                      hover:file:bg-gray-800
+                      cursor-pointer"
                   />
                 </div>
-              )}
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="px-2 bg-gray-50 text-sm text-gray-500">OR</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                  <input
+                    type="url"
+                    name="image_url"
+                    value={formData.image_url}
+                    onChange={handleImageUrlChange}
+                    placeholder="https://example.com/book-cover.jpg"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  />
+                </div>
+
+                {imagePreview && (
+                  <div className="flex justify-center pt-2">
+                    <div className="relative group">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-32 h-48 object-cover rounded-lg border border-gray-200 shadow-sm"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/placeholder-cover.svg';
+                          setError('Failed to load image from URL. Please check the URL or try uploading a file instead.');
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 rounded-lg"></div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end space-x-4">
