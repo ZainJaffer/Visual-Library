@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 import 'react-lazy-load-image-component/src/effects/blur.css';
 import api from '../../services/api';
+import { Menu, Transition } from '@headlessui/react';
+import { Fragment } from 'react';
+import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
 
-// Helper function for formatting authors
+// Helper functions for text formatting
 const formatAuthors = (authorString) => {
   if (!authorString) return '';
   
@@ -21,11 +24,32 @@ const formatAuthors = (authorString) => {
     : `${authors[0]} et al.`;
 };
 
-export const BookRow = React.memo(({ title, books, onToggleStatus }) => {
+const formatTitle = (title) => {
+  if (!title) return '';
+  const MAX_LENGTH = 50;
+  return title.length > MAX_LENGTH ? title.substring(0, MAX_LENGTH) + '...' : title;
+};
+
+export const BookRow = React.memo(({ title, books, onToggleStatus, onDeleteBook }) => {
   const [coverUrls, setCoverUrls] = useState({});
   const [showLeftScroll, setShowLeftScroll] = useState(false);
   const [showRightScroll, setShowRightScroll] = useState(false);
   const [scrollInterval, setScrollInterval] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Get section description
+  const getSectionDescription = (title) => {
+    switch (title) {
+      case 'Currently Reading':
+        return 'Books you are actively reading';
+      case 'Recently Added':
+        return 'Latest additions to your library';
+      case 'Favorites':
+        return 'Your favorite books';
+      default:
+        return '';
+    }
+  };
 
   const getRandomCover = async () => {
     try {
@@ -41,7 +65,7 @@ export const BookRow = React.memo(({ title, books, onToggleStatus }) => {
     const fetchCovers = async () => {
       const newCoverUrls = {};
       for (const book of books) {
-        if (!book.cover_image_url) {
+        if (!book.book.cover_image_url) {
           newCoverUrls[book.id] = await getRandomCover();
         }
       }
@@ -113,12 +137,47 @@ export const BookRow = React.memo(({ title, books, onToggleStatus }) => {
     }
   }, [title, books]);
 
+  const handleDelete = async (bookId) => {
+    try {
+      setIsDeleting(true);
+      const bookElement = document.getElementById(`book-${bookId}`);
+      if (bookElement) {
+        bookElement.style.transition = 'all 0.3s ease-out';
+        bookElement.style.opacity = '0';
+        bookElement.style.transform = 'scale(0.95)';
+      }
+
+      await api.deleteBook(bookId);
+      
+      // Call onDeleteBook immediately but keep the animation
+      onDeleteBook(bookId);
+      
+      // Remove the element after animation
+      setTimeout(() => {
+        if (bookElement) {
+          bookElement.remove();
+        }
+      }, 300);
+    } catch (error) {
+      console.error('Error deleting book:', error);
+      // Reset the animation if deletion fails
+      const bookElement = document.getElementById(`book-${bookId}`);
+      if (bookElement) {
+        bookElement.style.opacity = '1';
+        bookElement.style.transform = 'scale(1)';
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <div className="mb-8">
-      <div className="mb-6">
+    <div className={`mb-8 px-4 ${title === 'Currently Reading' ? 'bg-blue-50 rounded-xl' : ''}`}>
+      <div className={`${title === 'Currently Reading' ? 'pt-6' : ''} mb-6`}>
         <h2 className="text-2xl font-bold">{title}</h2>
+        <p className="text-gray-600 text-sm mt-1">{getSectionDescription(title)}</p>
       </div>
-      <div className="relative min-w-0 group">
+      <div className={`relative min-w-0 group ${title === 'Currently Reading' ? 'pb-6' : ''}`}>
         {showLeftScroll && (
           <button
             onMouseDown={() => startScroll('left')}
@@ -162,17 +221,17 @@ export const BookRow = React.memo(({ title, books, onToggleStatus }) => {
 
               return (
                 <div 
-                  key={book.id}
+                  key={book.id} 
                   id={`book-${book.id}`}
-                  className="flex-none w-[220px] group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
+                  className="flex-none w-[250px] group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
                 >
                   <div className="relative aspect-[2/3] overflow-hidden border border-gray-100">
                     <LazyLoadImage 
-                      src={book.cover_image_url 
-                        ? `http://localhost:8000/media/${book.cover_image_url}`
+                      src={book.book.cover_image_url 
+                        ? `http://localhost:8000/media/${book.book.cover_image_url}`
                         : `http://localhost:8000/media/${coverUrls[book.id] || ''}`
                       }
-                      alt={book.title}
+                      alt={book.book.title}
                       effect="blur"
                       className="w-full h-full object-cover"
                       wrapperClassName="w-full h-full"
@@ -185,56 +244,131 @@ export const BookRow = React.memo(({ title, books, onToggleStatus }) => {
                       }}
                     />
                     
-                    {book.is_favorite && (
-                      <div className={`absolute top-2 right-2 ${
-                        book.is_read 
-                          ? 'bg-red-500'  // Keep red for read favorites
-                          : 'bg-blue-500' // New blue for wishlist items
-                        } text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg`}>
-                        <span className="text-base">★</span>
-                      </div>
-                    )}
+                    {/* Three Dot Menu */}
+                    <div className="absolute top-2 right-2">
+                      <Menu as="div" className="relative inline-block text-left">
+                        <Menu.Button className="w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center text-gray-600">
+                          <EllipsisHorizontalIcon className="w-5 h-5" />
+                        </Menu.Button>
 
-                    <div className={`absolute top-2 left-2 px-2.5 py-1 rounded-full text-xs font-medium ${
-                      book.is_read 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-yellow-400 text-gray-800'
-                    }`}>
-                      {book.is_read ? 'Read' : 'Unread'}
+                        <Transition
+                          as={Fragment}
+                          enter="transition ease-out duration-100"
+                          enterFrom="transform opacity-0 scale-95"
+                          enterTo="transform opacity-100 scale-100"
+                          leave="transition ease-in duration-75"
+                          leaveFrom="transform opacity-100 scale-100"
+                          leaveTo="transform opacity-0 scale-95"
+                        >
+                          <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                            <div className="px-1 py-1">
+                              <Menu.Item>
+                                {({ active }) => (
+                                  <button
+                                    onClick={() => onToggleStatus(book.id, 'is_reading')}
+                                    className={`${
+                                      active ? 'bg-gray-100' : ''
+                                    } group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900`}
+                                  >
+                                    {!book.is_reading ? 'Start Reading' : 'Mark as Unread'}
+                                  </button>
+                                )}
+                              </Menu.Item>
+                              <Menu.Item>
+                                {({ active }) => (
+                                  <button
+                                    onClick={() => onToggleStatus(book.id, 'is_read')}
+                                    className={`${
+                                      active ? 'bg-gray-100' : ''
+                                    } group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900`}
+                                  >
+                                    {book.is_read ? 'Mark as Unread' : 'Mark as Read'}
+                                  </button>
+                                )}
+                              </Menu.Item>
+                              <Menu.Item>
+                                {({ active }) => (
+                                  <button
+                                    onClick={() => onToggleStatus(book.id, 'is_favorite')}
+                                    className={`${
+                                      active ? 'bg-gray-100' : ''
+                                    } group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900`}
+                                  >
+                                    {book.is_favorite ? 'Remove from Favorites' : 'Add to Favorites'}
+                                  </button>
+                                )}
+                              </Menu.Item>
+                            </div>
+                            <div className="px-1 py-1 border-t border-gray-200">
+                              <Menu.Item>
+                                {({ active }) => (
+                                  <button
+                                    onClick={() => {}}
+                                    className={`${
+                                      active ? 'bg-gray-100' : ''
+                                    } group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900`}
+                                  >
+                                    Edit Details
+                                  </button>
+                                )}
+                              </Menu.Item>
+                              <Menu.Item>
+                                {({ active }) => (
+                                  <button
+                                    onClick={() => handleDelete(book.id)}
+                                    disabled={isDeleting}
+                                    className={`${
+                                      active ? 'bg-gray-100' : ''
+                                    } group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900 text-red-600`}
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                              </Menu.Item>
+                            </div>
+                          </Menu.Items>
+                        </Transition>
+                      </Menu>
                     </div>
+
+                    {/* Favorite Button */}
+                    <button
+                      onClick={() => onToggleStatus(book.id, 'is_favorite')}
+                      className={`absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                        book.is_favorite
+                          ? book.is_read 
+                            ? 'bg-red-500 text-white'
+                            : 'bg-blue-500 text-white'
+                          : 'bg-white/80 hover:bg-white text-gray-600'
+                      }`}
+                    >
+                      <span className="text-lg">{book.is_favorite ? '★' : '☆'}</span>
+                    </button>
                   </div>
 
-                  <div className="p-3">
-                    <h3 className="text-base font-semibold mb-1.5 line-clamp-1 group-hover:text-gray-900 transition-colors">
-                      {book.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-3" title={book.author}>
-                      {formatAuthors(book.author)}
-                    </p>
-
-                    <div className="flex gap-1.5">
-                      <button 
-                        onClick={() => onToggleStatus(book.id, 'is_read')}
-                        className="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg border hover:bg-gray-50"
+                  <div className="p-4">
+                    <div className="mb-2">
+                      <span className={`${
+                        book.is_reading 
+                          ? 'bg-blue-600 text-white'
+                          : book.is_read 
+                            ? 'bg-green-600 text-white' 
+                            : 'bg-gray-200 text-gray-700'
+                        } px-2 py-1 rounded-md text-xs font-medium`}
                       >
-                        {book.is_read ? 'Mark Unread' : 'Mark Read'}
-                      </button>
-                      
-
-                      <button 
-                        onClick={() => onToggleStatus(book.id, 'is_favorite')}
-                        className={`w-9 flex items-center justify-center rounded-lg border ${
-                          book.is_favorite
-                            ? book.is_read 
-                              ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'  // Read + Favorite
-                              : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100'  // Unread + Favorite (Wishlist)
-                            : 'border-gray-200 hover:bg-gray-50'  // Not favorited
-                        }`}
-                        title={book.is_read ? 'Add to Favorites' : 'Add to Wishlist'}
-                      >
-                        <span className="text-lg">{book.is_favorite ? '★' : '☆'}</span>
-                      </button>
+                        {book.is_reading 
+                          ? 'Reading'
+                          : book.is_read 
+                            ? 'Read' 
+                            : 'Unread'}
+                      </span>
                     </div>
+                    <h3 className="font-semibold text-gray-900 whitespace-normal break-words line-clamp-2">
+                      {formatTitle(book.book.title)}
+                    </h3>
+                    <p className="text-sm text-gray-600 line-clamp-2">
+                      {formatAuthors(book.book.author)}
+                    </p>
                   </div>
                 </div>
               );

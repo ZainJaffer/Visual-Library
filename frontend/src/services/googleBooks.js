@@ -39,7 +39,7 @@ export const searchBooks = async (query, maxResults = 10) => {
             author: item.volumeInfo.authors ? item.volumeInfo.authors.join(', ') : 'Unknown',
             genre: item.volumeInfo.categories ? item.volumeInfo.categories.join(', ') : 'Uncategorized',
             description: item.volumeInfo.description || '',
-            cover_image_url: item.volumeInfo.imageLinks?.thumbnail || null,
+            cover_image_url: item.volumeInfo.imageLinks?.thumbnail?.replace('http:', 'https:') || null,
             google_books_id: item.id,
             published_date: item.volumeInfo.publishedDate,
             page_count: item.volumeInfo.pageCount,

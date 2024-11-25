@@ -18,6 +18,9 @@ export const authService = {
         })
         if (response.data.access) {
             localStorage.setItem('token', response.data.access)
+            if (response.data.refresh) {
+                localStorage.setItem('refresh_token', response.data.refresh)
+            }
         }
         return response.data
     } catch (error) {
@@ -27,6 +30,7 @@ export const authService = {
 
   logout: () => {
     localStorage.removeItem('token')
+    localStorage.removeItem('refresh_token')
   },
 
   testProtectedRoute: async () => {

@@ -33,21 +33,9 @@ class BookSerializer(serializers.ModelSerializer):
         }
 
 class UserBookSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(source='book.title', read_only=True)
-    author = serializers.CharField(source='book.author', read_only=True)
-    genre = serializers.CharField(source='book.genre', read_only=True)
-    description = serializers.CharField(source='book.description', read_only=True)
-    cover_image_url = serializers.CharField(source='book.cover_image_url', read_only=True)
+    book = BookSerializer(read_only=True)
+    date_added = serializers.DateTimeField(source='created_at', read_only=True)
 
     class Meta:
         model = UserBook
-        fields = [
-            'id',
-            'title',
-            'author',
-            'genre',
-            'description',
-            'cover_image_url',
-            'is_read',
-            'is_favorite'
-        ]
+        fields = ['id', 'book', 'is_read', 'is_reading', 'is_favorite', 'date_added']

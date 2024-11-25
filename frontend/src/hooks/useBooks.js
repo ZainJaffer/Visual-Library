@@ -10,9 +10,11 @@ export const useBooks = () => {
         try {
             setLoading(true);
             const response = await api.get('/api/users/books/');
+            console.log('Fetched books:', response.data);  
             setBooks(response.data);
             setError(null);
         } catch (error) {
+            console.error('Error fetching books:', error);  
             setError({
                 message: error.message,
                 onClose: () => setError(null)

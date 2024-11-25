@@ -15,6 +15,8 @@ from PIL import Image
 import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework.exceptions import NotFound, ValidationError, APIException
+import requests
+from tempfile import NamedTemporaryFile
 
 # Local imports
 from .models import CustomUser, UserBook, Book
@@ -163,39 +165,21 @@ class ListUserBooksView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserBookSerializer
 
-    @cache_book_query
     def get_queryset(self):
-        # Use select_related to prevent N+1 queries
-        queryset = UserBook.objects.select_related('book').filter(
-            user=self.request.user
-        )
+        status_filter = self.request.query_params.get('status', None)
+        queryset = UserBook.objects.filter(user=self.request.user).select_related('book')
         
-        # Add filtering by read status
-        status_param = self.request.query_params.get('status', None)
-        favorite_param = self.request.query_params.get('favorite', None)
+        if status_filter == 'reading':
+            return queryset.filter(is_reading=True).order_by('-created_at')
+        elif status_filter == 'recent':
+            return queryset.order_by('-created_at')[:5]
+        
+        return queryset.order_by('-created_at')
 
-        if status_param == 'read':
-            queryset = queryset.filter(is_read=True)
-        elif status_param == 'unread':
-            queryset = queryset.filter(is_read=False)
-
-        if favorite_param:
-            queryset = queryset.filter(is_favorite=bool(int(favorite_param)))
-
-        # Keep the random cover functionality
-        covers_dir = os.path.join(settings.MEDIA_ROOT, 'book_covers')
-        if os.path.exists(covers_dir):
-            available_covers = [
-                f for f in os.listdir(covers_dir) 
-                if f.lower().endswith(('.jpg', '.jpeg', '.png'))
-            ]
-            
-            for userbook in queryset:
-                if not userbook.book.cover_image_url and available_covers:
-                    random_cover = random.choice(available_covers)
-                    userbook.book.temp_cover = f'book_covers/{random_cover}'
-            
-        return queryset
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -245,6 +229,33 @@ class DeleteBookView(generics.DestroyAPIView):
     def perform_destroy(self, instance):
         # This will delete both the UserBook and Book entries
         instance.delete()
+
+class DeleteUserBookView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, book_id):
+        try:
+            # Find the UserBook instance for this user and book
+            user_book = UserBook.objects.get(user=request.user, id=book_id)
+            
+            # Delete the UserBook instance
+            user_book.delete()
+            
+            return Response({
+                'status': 'success',
+                'message': 'Book removed successfully'
+            }, status=status.HTTP_200_OK)
+            
+        except UserBook.DoesNotExist:
+            return Response({
+                'status': 'error',
+                'message': 'Book not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # Add this new view for random covers
 @api_view(['GET'])
@@ -374,10 +385,45 @@ class UnifiedAddBookView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         try:
+            print("Adding book for user:", request.user.email)
             is_google_books = bool(request.data.get('google_books_id'))
             
             if is_google_books:
                 book_data = request.data
+                print("Google Books data:", book_data)
+
+                # Download and save cover image if it exists
+                cover_image_url = book_data.get('cover_image_url')
+                local_cover_path = None
+                if cover_image_url:
+                    try:
+                        # Download image from Google Books
+                        response = requests.get(cover_image_url)
+                        if response.status_code == 200:
+                            # Create a temporary file
+                            img_temp = NamedTemporaryFile(delete=True)
+                            img_temp.write(response.content)
+                            img_temp.flush()
+
+                            # Create a proper file name
+                            file_name = f"google_book_{book_data['google_books_id']}.jpg"
+                            
+                            # Save to media/book_covers
+                            save_path = os.path.join('book_covers', file_name)
+                            full_path = os.path.join(settings.MEDIA_ROOT, save_path)
+                            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                            
+                            # Compress and save the image
+                            img = Image.open(img_temp)
+                            if img.mode != 'RGB':
+                                img = img.convert('RGB')
+                            img.thumbnail((800, 800), Image.Resampling.LANCZOS)
+                            img.save(full_path, 'JPEG', quality=85, optimize=True)
+                            
+                            local_cover_path = save_path
+                    except Exception as e:
+                        print(f"Error downloading cover image: {str(e)}")
+
                 book, created = Book.objects.get_or_create(
                     google_books_id=book_data['google_books_id'],
                     defaults={
@@ -385,10 +431,17 @@ class UnifiedAddBookView(generics.CreateAPIView):
                         'author': book_data['author'],
                         'genre': book_data.get('genre', 'Uncategorized'),
                         'description': book_data.get('description', ''),
-                        'cover_image_url': book_data.get('cover_image_url'),
+                        'cover_image_url': local_cover_path,  # Use the local path
                         'source': 'google'
                     }
                 )
+
+                if not created and local_cover_path:
+                    # Update cover image for existing book if we got a new one
+                    book.cover_image_url = local_cover_path
+                    book.save()
+
+                print("Book created:", created, "Book ID:", book.id)
             else:
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
@@ -416,18 +469,16 @@ class UnifiedAddBookView(generics.CreateAPIView):
                 is_read=request.data.get('is_read', False),
                 is_favorite=False
             )
+            print("UserBook created with ID:", user_book.id)
 
+            # Serialize the user_book for response
+            serializer = UserBookSerializer(user_book)
+            print("Serialized response:", serializer.data)
+            
             return Response({
                 'status': 'success',
                 'message': 'Book added successfully',
-                'data': {
-                    'book_id': book.id,
-                    'title': book.title,
-                    'author': book.author,
-                    'genre': book.genre,
-                    'cover_url': book.cover_url,
-                    'source': book.source
-                }
+                'data': serializer.data
             }, status=status.HTTP_201_CREATED)
 
         except ValidationError as e:
@@ -437,6 +488,7 @@ class UnifiedAddBookView(generics.CreateAPIView):
                 'errors': e.detail if hasattr(e, 'detail') else None
             }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            print("Error adding book:", str(e))
             return Response({
                 'status': 'error',
                 'message': 'An unexpected error occurred',

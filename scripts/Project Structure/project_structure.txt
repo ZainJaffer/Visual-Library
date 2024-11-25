@@ -1,4 +1,4 @@
-Project Structure - Generated on 2024-11-23 18:52:26
+Project Structure - Generated on 2024-11-24 15:27:38
 ==================================================
 
 Starting from: C:\Users\Zain Jaffer\Desktop\Dev\Full Stack\Visual Library
@@ -12,7 +12,6 @@ Visual Library/
         debug.log
         manage.py
         requirements.txt
-        api/
         media/
             book_covers/
                 10069547.jpg
@@ -247,8 +246,6 @@ Visual Library/
             utils.py
             views.py
             __init__.py
-            books/
-                urls.py
             management/
                 __init__.py
                 commands/
@@ -263,6 +260,8 @@ Visual Library/
                 0006_alter_book_cover_image_url.py
                 0007_book_cover_image_book_google_books_id_book_is_manual_and_more.py
                 0008_remove_book_is_manual_book_openlibrary_id_and_more.py
+                0009_alter_userbook_options.py
+                0010_alter_userbook_options_book_created_at_and_more.py
                 __init__.py
         visual_library/
             .env
@@ -287,6 +286,7 @@ Visual Library/
             App.jsx
             index.css
             main.jsx
+            assets/
             components/
                 ErrorDisplay.jsx
                 LoadingSpinner.jsx
@@ -300,7 +300,6 @@ Visual Library/
                 books/
                     BookRow.jsx
                     BookSearch.jsx
-                    GoogleBooksTest.jsx
             context/
                 AuthContext.jsx
             hooks/
@@ -312,6 +311,7 @@ Visual Library/
                 Login.jsx
                 MyBooks.jsx
                 Register.jsx
+                TestErrors.jsx
             services/
                 api.js
                 auth.js

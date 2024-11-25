@@ -21,44 +21,47 @@ function MyBooks() {
     const book = books.find(b => b.id === bookId);
     if (!book) return;
 
-    const newValue = field === 'is_read' ? !book.is_read : !book.is_favorite;
+    const newValue = field === 'is_read' ? !book.is_read : 
+                    field === 'is_favorite' ? !book.is_favorite :
+                    field === 'is_reading' ? !book.is_reading : null;
+    
+    if (newValue === null) return;
 
     try {
-      if (field === 'is_read' && newValue === true) {
+      // If marking as read, also stop reading
+      if (field === 'is_read' && newValue === true && book.is_reading) {
         await api.put(`/api/users/books/status/${bookId}/`, { 
           is_read: true,
-          is_favorite: false 
+          is_reading: false 
         });
-      } else {
-        await api.put(`/api/users/books/status/${bookId}/`, { [field]: newValue });
-      }
-      
-      if (field === 'is_favorite') {
+        // Update both statuses in state
         setBooks(prevBooks => 
           prevBooks.map(b => 
-            b.id === bookId ? { ...b, is_favorite: newValue } : b
+            b.id === bookId ? { ...b, is_read: true, is_reading: false } : b
           )
         );
-      } else {
-        const bookElement = document.getElementById(`book-${bookId}`);
-        if (bookElement) {
-          bookElement.style.transition = 'all 0.3s ease-out';
-          bookElement.style.opacity = '0';
-          bookElement.style.transform = 'scale(0.95)';
-        }
-        
-        setTimeout(() => {
-          setBooks(prevBooks => 
-            prevBooks.map(b => 
-              b.id === bookId ? { ...b, is_read: newValue } : b
-            )
-          );
-
-          if (bookElement && book.is_favorite) {
-            bookElement.style.opacity = '1';
-            bookElement.style.transform = 'scale(1)';
-          }
-        }, 300);
+      } 
+      // If starting to read, make sure it's not marked as read
+      else if (field === 'is_reading' && newValue === true) {
+        await api.put(`/api/users/books/status/${bookId}/`, { 
+          is_reading: true,
+          is_read: false
+        });
+        // Update both statuses in state
+        setBooks(prevBooks => 
+          prevBooks.map(b => 
+            b.id === bookId ? { ...b, is_reading: true, is_read: false } : b
+          )
+        );
+      }
+      else {
+        await api.put(`/api/users/books/status/${bookId}/`, { [field]: newValue });
+        // Update single status in state
+        setBooks(prevBooks => 
+          prevBooks.map(b => 
+            b.id === bookId ? { ...b, [field]: newValue } : b
+          )
+        );
       }
     } catch (err) {
       console.error('Error updating book:', err);
@@ -66,24 +69,17 @@ function MyBooks() {
     }
   };
 
-  // Group books into categories
-  const bookCategories = useMemo(() => {
-    // Get unique genres from read books only
-    const genres = [...new Set(books
-      .filter(book => book.is_read)
-      .flatMap(book => book.genre ? book.genre.split(',').map(g => g.trim()) : [])
-    )];
-
-    return {
-      'Favorites': books.filter(book => book.is_favorite && book.is_read),
-      ...genres.reduce((acc, genre) => ({
-        ...acc,
-        [genre]: books.filter(book => 
-          book.is_read && book.genre?.includes(genre)
-        )
-      }), {})
-    };
-  }, [books]);
+  const handleDeleteBook = async (bookId) => {
+    try {
+      setBooks(prevBooks => prevBooks.filter(book => book.id !== bookId));
+      setSuccessMessage('Book deleted successfully');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error('Error deleting book:', err);
+      setErrorState('Failed to delete book');
+      setTimeout(() => setErrorState(null), 3000);
+    }
+  };
 
   const handleAddBook = async (book) => {
     console.log('MyBooks: Received book data:', book);
@@ -91,14 +87,32 @@ function MyBooks() {
         // Add is_read flag for books added from search
         const bookData = {
             ...book,
-            is_read: true  // Mark the book as read when adding from search
+            is_read: false  // Mark the book as unread when adding from search
         };
         
         console.log('MyBooks: Sending POST request to /api/users/books/add/');
-        await api.post('/api/users/books/add/', bookData);
-        console.log('MyBooks: Book added successfully');
+        const response = await api.post('/api/users/books/add/', bookData);
+        console.log('MyBooks: Book added successfully', response.data);
+        
+        // Update books state immediately with the new book
+        if (response.data.status === 'success' && response.data.data) {
+            console.log('MyBooks: Adding new book to state:', response.data.data);
+            const newBook = {
+                ...response.data.data,
+                is_read: false  // Ensure the new book is marked as unread
+            };
+            setBooks(prevBooks => {
+                const newBooks = [...prevBooks, newBook];
+                console.log('MyBooks: Updated books state:', newBooks);
+                return newBooks;
+            });
+        }
+        
         setSuccessMessage(`"${book.title}" has been added to your library`);
-        fetchBooks();
+        
+        // Fetch all books to ensure everything is in sync
+        await fetchBooks();  // Wait for the fetch to complete
+        console.log('MyBooks: Books refetched');
         
         // Clear success message after 3 seconds
         setTimeout(() => setSuccessMessage(''), 3000);
@@ -107,6 +121,43 @@ function MyBooks() {
         setErrorState(error.message);
     }
   };
+
+  // Group books into categories
+  const bookCategories = useMemo(() => {
+    // Get unique genres from all books, not just read ones
+    const genres = [...new Set(books
+      .map(book => book.book.genre)
+      .filter(Boolean)
+      .flatMap(genre => genre.split(',').map(g => g.trim())))];
+
+    // Get currently reading books
+    const currentlyReading = books.filter(book => book.is_reading);
+
+    // Get the 10 most recently added books
+    const recentlyAdded = [...books]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 10);
+
+    // Filter out genres with less than 5 books
+    const genresWithEnoughBooks = genres.filter(genre => {
+      const booksInGenre = books.filter(book => 
+        book.book.genre?.includes(genre)
+      );
+      return booksInGenre.length >= 5;
+    });
+
+    return {
+      'Currently Reading': currentlyReading,
+      'Recently Added': recentlyAdded,
+      'Favorites': books.filter(book => book.is_favorite),
+      ...genresWithEnoughBooks.reduce((acc, genre) => ({
+        ...acc,
+        [genre]: books.filter(book => 
+          book.book.genre?.includes(genre)
+        )
+      }), {})
+    };
+  }, [books]);
 
   if (loading) return <LoadingSpinner />;
 
@@ -133,18 +184,37 @@ function MyBooks() {
                 </div>
             </div>
             
-            <div className="space-y-8">
+            <div className="-mx-4 space-y-8">
+                {bookCategories['Currently Reading'].length > 0 && (
+                    <BookRow 
+                        title="Currently Reading"
+                        books={bookCategories['Currently Reading']}
+                        onToggleStatus={toggleBookStatus}
+                        onDeleteBook={handleDeleteBook}
+                    />
+                )}
+
+                {bookCategories['Recently Added'].length > 0 && (
+                    <BookRow 
+                        title="Recently Added"
+                        books={bookCategories['Recently Added']}
+                        onToggleStatus={toggleBookStatus}
+                        onDeleteBook={handleDeleteBook}
+                    />
+                )}
+                
                 {bookCategories['Favorites'].length > 0 && (
                     <BookRow 
                         title="Favorites"
                         books={bookCategories['Favorites']}
                         onToggleStatus={toggleBookStatus}
+                        onDeleteBook={handleDeleteBook}
                     />
                 )}
                 
                 {Object.entries(bookCategories)
                     .filter(([key, books]) => 
-                        key !== 'Favorites' && 
+                        key !== 'Favorites' && key !== 'Recently Added' && key !== 'Currently Reading' && 
                         books.length > 0
                     )
                     .map(([genre, books]) => (
@@ -153,6 +223,7 @@ function MyBooks() {
                             title={genre}
                             books={books}
                             onToggleStatus={toggleBookStatus}
+                            onDeleteBook={handleDeleteBook}
                         />
                     ))}
             </div>

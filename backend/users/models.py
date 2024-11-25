@@ -2,8 +2,6 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from imagekit.models import ProcessedImageField
-from imagekit.processors import ResizeToFit
 
 # Create your models here.
 class CustomUserManager(BaseUserManager):
@@ -81,13 +79,14 @@ class UserBook(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     is_read = models.BooleanField(default=False)
+    is_reading = models.BooleanField(default=False)
     is_favorite = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         indexes = [
-            models.Index(fields=['user', 'is_read', 'is_favorite']),
+            models.Index(fields=['user', 'is_read', 'is_reading', 'is_favorite']),
             models.Index(fields=['user', 'book']),
         ]
 

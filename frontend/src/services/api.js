@@ -1,84 +1,98 @@
-import axios from 'axios'
+import axios from 'axios';
 
-export const api = axios.create({
-  baseURL: 'http://localhost:8000',  // Updated to use the main URL since we're not using /api prefix anymore
+const api = axios.create({
+  baseURL: 'http://localhost:8000',
   headers: {
-    'Content-Type': 'application/json'
-  }
-})
+    'Content-Type': 'application/json',
+  },
+});
 
-// Add request interceptor for token
+// Add request interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('token');
     if (token) {
-      console.log('Adding token to request:', token.substring(0, 20) + '...'); // Log token (partially)
-      config.headers.Authorization = `Bearer ${token}`
-    } else {
-      console.log('No token found in localStorage');
+      config.headers.Authorization = `Bearer ${token}`;
     }
-
-    // Don't override content-type if it's multipart/form-data
-    if (config.headers['Content-Type'] !== 'multipart/form-data') {
-      config.headers['Content-Type'] = 'application/json';
-    }
-    
-    return config
+    return config;
   },
   (error) => {
-    return Promise.reject(error)
+    return Promise.reject(error);
   }
-)
+);
 
 // Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    console.log('API Interceptor caught error:', error);
+  async (error) => {
+    const originalRequest = error.config;
     
-    let errorMessage = 'An unexpected error occurred';
-    
-    if (!error.response) {
-      errorMessage = 'Unable to connect to server. Please check your connection.';
-    } else {
-      console.log('Error status:', error.response.status);
-      console.log('Error data:', error.response.data);
+    // If error is 401 and we haven't tried refreshing yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
       
-      // Use the standardized error format from our new endpoint
-      if (error.response.data?.status === 'error') {
-        errorMessage = error.response.data.message || error.response.data.detail || 'An error occurred';
-      } else if (error.response.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response.data?.detail) {
-        errorMessage = error.response.data.detail;
-      } else {
-        switch (error.response.status) {
-          case 401:
-            errorMessage = 'Your session has expired. Please log in again.';
-            localStorage.removeItem('token');
-            setTimeout(() => window.location.href = '/login', 2000);
-            break;
-          case 400:
-            errorMessage = error.response.data?.message || error.response.data?.detail || 'Invalid request. Please check your input.';
-            break;
-          case 404:
-            errorMessage = error.response.data?.message || 'The requested resource was not found.';
-            break;
-          case 500:
-            errorMessage = error.response.data?.message || 'Server error. Please try again later.';
-            break;
+      try {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
         }
+
+        const response = await api.post('/api/users/token/refresh/', {
+          refresh: refreshToken
+        });
+
+        if (response.data.access) {
+          const newToken = response.data.access;
+          localStorage.setItem('token', newToken);
+          api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError);
+        localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/login';
+        return Promise.reject({
+          message: 'Session expired. Please log in again.',
+          originalError: error
+        });
       }
     }
-
-    console.log('Returning error with message:', errorMessage);
     
+    // Handle other errors
+    const errorMessage = error.response?.data?.detail || 
+                        error.response?.data?.message ||
+                        error.message ||
+                        'An unexpected error occurred';
+
     return Promise.reject({
       message: errorMessage,
-      originalError: error,
-      status: error.response?.status
+      originalError: error
     });
   }
-)
+);
 
-export default api
+// Book management methods
+api.deleteBook = async (bookId) => {
+  try {
+    const response = await api.delete(`/api/users/books/${bookId}/delete/`);
+    return response.data;
+  } catch (error) {
+    console.error('Delete book error:', error);
+    throw error;
+  }
+};
+
+api.toggleBookStatus = async (bookId, field) => {
+  try {
+    const response = await api.put(`/api/users/books/status/${bookId}/`, {
+      [field]: true
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export default api;
