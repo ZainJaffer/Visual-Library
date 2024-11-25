@@ -71,7 +71,7 @@ function AddBook() {
         console.log(pair[0] + ': ' + pair[1]);
       }
 
-      const response = await api.post('/users/books/add/', form, {  // Updated endpoint path to match backend
+      const response = await api.post('/api/users/books/add/', form, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import Home from './pages/Home'
 import Login from './pages/Login'
@@ -16,11 +17,11 @@ console.log('App.jsx loaded');
 function App() {
   return (
     <AuthProvider>
-      <div className="App">
+      <div className="App flex flex-col min-h-screen">
         <Toaster position="top-right" />
         <Router>
-          <div className="min-h-screen bg-gray-100">
-            <Navbar /> 
+          <Navbar /> 
+          <main className="flex-grow bg-gray-100">
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
@@ -76,7 +77,8 @@ function App() {
                 element={<div>Page not found</div>} 
               />
             </Routes>
-          </div>
+          </main>
+          <Footer />
         </Router>
       </div>
     </AuthProvider>
