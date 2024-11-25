@@ -133,35 +133,19 @@ export const BookRow = React.memo(({ title, books, onToggleStatus, onDeleteBook,
 
   const handleDelete = async (bookId) => {
     try {
-      setIsDeleting(true);
-      const bookElement = document.getElementById(`book-${bookId}`);
-      if (bookElement) {
-        bookElement.style.transition = 'all 0.3s ease-out';
-        bookElement.style.opacity = '0';
-        bookElement.style.transform = 'scale(0.95)';
+      const response = await api.deleteBook(bookId);
+      if (response.status === 'success') {
+        // Call the parent's onDeleteBook callback
+        onDeleteBook(bookId);
+      } else {
+        throw new Error(response.message || 'Failed to delete book');
       }
-
-      await api.deleteBook(bookId);
-      
-      // Call onDeleteBook immediately but keep the animation
-      onDeleteBook(bookId);
-      
-      // Remove the element after animation
-      setTimeout(() => {
-        if (bookElement) {
-          bookElement.remove();
-        }
-      }, 300);
     } catch (error) {
-      console.error('Error deleting book:', error);
-      // Reset the animation if deletion fails
-      const bookElement = document.getElementById(`book-${bookId}`);
-      if (bookElement) {
-        bookElement.style.opacity = '1';
-        bookElement.style.transform = 'scale(1)';
-      }
-    } finally {
-      setIsDeleting(false);
+      console.error('Error deleting book:', error.message);
+      onUpdateBook({
+        type: 'error',
+        message: error.message || 'Failed to delete book'
+      });
     }
   };
 

@@ -69,16 +69,16 @@ function MyBooks() {
     }
   };
 
-  const handleDeleteBook = async (bookId) => {
-    try {
-      setBooks(prevBooks => prevBooks.filter(book => book.id !== bookId));
-      setSuccessMessage('Book deleted successfully');
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err) {
-      console.error('Error deleting book:', err);
-      setErrorState('Failed to delete book');
-      setTimeout(() => setErrorState(null), 3000);
-    }
+  const handleDeleteBook = (bookId) => {
+    console.log('MyBooks: Deleting book:', bookId);
+    // Remove the book from the local state
+    setBooks(prevBooks => prevBooks.filter(book => book.id !== bookId));
+    setSuccessMessage('Book deleted successfully');
+    
+    // Clear success message after 3 seconds
+    setTimeout(() => {
+      setSuccessMessage('');
+    }, 3000);
   };
 
   const handleAddBook = async (book) => {

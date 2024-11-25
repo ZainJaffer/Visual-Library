@@ -79,8 +79,10 @@ api.deleteBook = async (bookId) => {
     const response = await api.delete(`/api/users/books/${bookId}/delete/`);
     return response.data;
   } catch (error) {
-    console.error('Delete book error:', error);
-    throw error;
+    if (error.response) {
+      throw new Error(error.response.data.message || 'Failed to delete book');
+    }
+    throw new Error('Network error while deleting book');
   }
 };
 

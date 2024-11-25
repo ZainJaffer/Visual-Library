@@ -236,10 +236,27 @@ class DeleteUserBookView(APIView):
     def delete(self, request, book_id):
         try:
             # Find the UserBook instance for this user and book
-            user_book = UserBook.objects.get(user=request.user, id=book_id)
+            user_book = UserBook.objects.get(id=book_id, user=request.user)
+            
+            # Get the book instance before deleting the user_book
+            book = user_book.book
             
             # Delete the UserBook instance
             user_book.delete()
+            
+            # Check if this was the last user owning this book
+            if not UserBook.objects.filter(book=book).exists():
+                # If no other users have this book, delete the book and its cover
+                if book.cover_image_url and book.cover_image_url.startswith('book_covers/'):
+                    file_path = os.path.join(settings.MEDIA_ROOT, book.cover_image_url)
+                    if os.path.exists(file_path):
+                        try:
+                            os.remove(file_path)
+                        except Exception as e:
+                            print(f"Error removing cover image: {str(e)}")
+                
+                # Delete the book
+                book.delete()
             
             return Response({
                 'status': 'success',
@@ -249,7 +266,7 @@ class DeleteUserBookView(APIView):
         except UserBook.DoesNotExist:
             return Response({
                 'status': 'error',
-                'message': 'Book not found'
+                'message': 'Book not found in your library'
             }, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({
